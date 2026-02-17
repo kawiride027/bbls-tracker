@@ -8,1221 +8,600 @@
   <title>BBLS Tracker Pro</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Condensed:wght@400;700&display=swap');
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-    
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     :root {
-      --primary: #FF4500;
-      --primary-dark: #CC3700;
-      --secondary: #1a1a1a;
-      --bg: #0a0a0a;
-      --surface: #1a1a1a;
-      --text: #ffffff;
-      --text-dim: #888888;
-      --success: #00ff00;
-      --warning: #ffaa00;
-      --danger: #ff0000;
-      --border: #333333;
+      --red:#FF4500; --red2:#CC3700; --bg:#0a0a0a; --surf:#1a1a1a; --sec:#111;
+      --txt:#fff; --dim:#888; --green:#00e676; --warn:#ffaa00; --bad:#ff1744; --bdr:#2a2a2a;
     }
-    
-    body {
-      font-family: 'Roboto Condensed', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      overflow-x: hidden;
-      min-height: 100vh;
-      padding-bottom: 80px;
-    }
-    
-    .header {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      padding: 20px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 4px 20px rgba(255, 69, 0, 0.3);
-    }
-    
-    .header-title {
-      font-family: 'Bebas Neue', cursive;
-      font-size: 28px;
-      letter-spacing: 2px;
-      text-align: center;
-      margin-bottom: 8px;
-    }
-    
-    .header-subtitle {
-      text-align: center;
-      font-size: 14px;
-      opacity: 0.9;
-      letter-spacing: 1px;
-    }
-    
-    .status-bar {
-      display: flex;
-      justify-content: space-around;
-      background: var(--surface);
-      padding: 12px;
-      border-bottom: 2px solid var(--border);
-    }
-    
-    .status-item {
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-    
-    .status-item:active {
-      transform: scale(0.95);
-    }
-    
-    .status-label {
-      font-size: 11px;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
-    }
-    
-    .status-value {
-      font-size: 18px;
-      font-weight: bold;
-      color: var(--primary);
-    }
-    
-    .container {
-      padding: 20px;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    
-    .workout-card {
-      background: var(--surface);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    }
-    
-    .exercise-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-      padding-bottom: 15px;
-      border-bottom: 2px solid var(--border);
-    }
-    
-    .exercise-name {
-      font-family: 'Bebas Neue', cursive;
-      font-size: 24px;
-      letter-spacing: 1px;
-      color: var(--primary);
-    }
-    
-    .exercise-complete {
-      width: 30px;
-      height: 30px;
-      border: 3px solid var(--border);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-    
-    .exercise-complete.checked {
-      background: var(--success);
-      border-color: var(--success);
-    }
-    
-    .exercise-complete.checked::after {
-      content: '✓';
-      color: var(--bg);
-      font-weight: bold;
-      font-size: 18px;
-    }
-    
-    .weight-display {
-      background: rgba(255, 69, 0, 0.1);
-      border: 2px solid var(--primary);
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
-    
-    .weight-label {
-      font-size: 12px;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 5px;
-    }
-    
-    .weight-value {
-      font-size: 32px;
-      font-weight: bold;
-      color: var(--primary);
-      font-family: 'Bebas Neue', cursive;
-      letter-spacing: 2px;
-    }
-    
-    .weight-adjust {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    
-    .weight-btn {
-      flex: 1;
-      padding: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid var(--border);
-      color: var(--text);
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 12px;
-      transition: all 0.3s;
-    }
-    
-    .weight-btn:active {
-      transform: scale(0.95);
-      background: rgba(255, 255, 255, 0.2);
-    }
-    
-    .plates-info {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 12px;
-      border-radius: 6px;
-      margin-top: 10px;
-      border-left: 3px solid var(--primary);
-    }
-    
-    .plates-label {
-      font-size: 11px;
-      color: var(--text-dim);
-      margin-bottom: 5px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    
-    .plates-value {
-      font-size: 14px;
-      color: var(--text);
-      font-weight: bold;
-    }
-    
-    .sets-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    
-    .set-box {
-      background: var(--secondary);
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      padding: 15px 10px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s;
-      position: relative;
-    }
-    
-    .set-box:active {
-      transform: scale(0.95);
-    }
-    
-    .set-box.completed {
-      background: rgba(0, 255, 0, 0.2);
-      border-color: var(--success);
-    }
-    
-    .set-box.failed {
-      background: rgba(255, 0, 0, 0.2);
-      border-color: var(--danger);
-    }
-    
-    .set-label {
-      font-size: 11px;
-      color: var(--text-dim);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    
-    .set-input {
-      width: 100%;
-      background: transparent;
-      border: none;
-      color: var(--text);
-      font-size: 28px;
-      font-weight: bold;
-      text-align: center;
-      font-family: 'Bebas Neue', cursive;
-      outline: none;
-    }
-    
-    .set-input::-webkit-inner-spin-button,
-    .set-input::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    
-    .rest-timer {
-      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-      border-radius: 8px;
-      padding: 20px;
-      text-align: center;
-      margin-top: 15px;
-      box-shadow: 0 4px 12px rgba(255, 69, 0, 0.4);
-    }
-    
-    .timer-display {
-      font-size: 48px;
-      font-weight: bold;
-      font-family: 'Bebas Neue', cursive;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
-    }
-    
-    .timer-presets {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      margin-bottom: 10px;
-    }
-    
-    .timer-preset-btn {
-      background: rgba(255, 255, 255, 0.2);
-      border: 2px solid rgba(255, 255, 255, 0.4);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 11px;
-      letter-spacing: 1px;
-      transition: all 0.3s;
-    }
-    
-    .timer-preset-btn.active {
-      background: rgba(255, 255, 255, 0.4);
-      border-color: white;
-    }
-    
-    .timer-preset-btn:active {
-      transform: scale(0.95);
-    }
-    
-    .timer-controls {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-    
-    .timer-btn {
-      background: rgba(255, 255, 255, 0.2);
-      border: 2px solid rgba(255, 255, 255, 0.4);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      text-transform: uppercase;
-      font-size: 12px;
-      letter-spacing: 1px;
-      transition: all 0.3s;
-    }
-    
-    .timer-btn:active {
-      transform: scale(0.95);
-      background: rgba(255, 255, 255, 0.3);
-    }
-    
-    .notes-section {
-      margin-top: 15px;
-    }
-    
-    .notes-textarea {
-      width: 100%;
-      background: var(--secondary);
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
-      color: var(--text);
-      font-family: 'Roboto Condensed', sans-serif;
-      font-size: 14px;
-      resize: vertical;
-      min-height: 60px;
-    }
-    
-    .notes-textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-    
-    .nav-buttons {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      display: flex;
-      background: var(--surface);
-      border-top: 2px solid var(--border);
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
-    }
-    
-    .nav-btn {
-      flex: 1;
-      padding: 20px;
-      background: var(--secondary);
-      border: none;
-      color: var(--text);
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      transition: all 0.3s;
-      font-family: 'Roboto Condensed', sans-serif;
-    }
-    
-    .nav-btn:active {
-      background: var(--primary);
-    }
-    
-    .nav-btn.primary {
-      background: var(--primary);
-    }
-    
-    .nav-btn.primary:active {
-      background: var(--primary-dark);
-    }
-    
-    .nav-btn:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-    
-    /* Modal Styles */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.9);
-      z-index: 200;
-      padding: 20px;
-      overflow-y: auto;
-    }
-    
-    .modal.active {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .modal-content {
-      background: var(--surface);
-      border-radius: 12px;
-      padding: 20px;
-      max-width: 500px;
-      width: 100%;
-      border: 2px solid var(--border);
-    }
-    
-    .modal-title {
-      font-family: 'Bebas Neue', cursive;
-      font-size: 24px;
-      color: var(--primary);
-      margin-bottom: 20px;
-      text-align: center;
-      letter-spacing: 2px;
-    }
-    
-    .modal-close {
-      background: var(--secondary);
-      border: 2px solid var(--border);
-      color: var(--text);
-      padding: 12px 20px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      width: 100%;
-      margin-top: 20px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    
-    .modal-close:active {
-      background: var(--primary);
-    }
-    
-    .progress-item {
-      background: var(--secondary);
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      border-left: 3px solid var(--primary);
-    }
-    
-    .progress-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    
-    .progress-date {
-      font-size: 12px;
-      color: var(--text-dim);
-    }
-    
-    .progress-exercise {
-      font-weight: bold;
-      color: var(--primary);
-    }
-    
-    .progress-sets {
-      font-size: 14px;
-      color: var(--text-dim);
-    }
-    
-    .alert-banner {
-      background: rgba(255, 170, 0, 0.2);
-      border: 2px solid var(--warning);
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 15px;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-    
-    .alert-banner.success {
-      background: rgba(0, 255, 0, 0.2);
-      border-color: var(--success);
-    }
-    
-    .alert-banner.danger {
-      background: rgba(255, 0, 0, 0.2);
-      border-color: var(--danger);
-    }
+    body { font-family:'Roboto Condensed',sans-serif; background:var(--bg); color:var(--txt); min-height:100vh; padding-bottom:90px; overflow-x:hidden; }
 
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-    }
-    
-    .timer-display.active {
-      animation: pulse 1s ease-in-out infinite;
-    }
+    /* PIN */
+    .pin-screen { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; }
+    .pin-logo { font-family:'Bebas Neue',cursive; font-size:44px; color:var(--red); letter-spacing:4px; }
+    .pin-tag { color:var(--dim); font-size:12px; letter-spacing:2px; text-transform:uppercase; margin:6px 0 50px; }
+    .pin-lbl { color:var(--dim); font-size:12px; letter-spacing:2px; text-transform:uppercase; margin-bottom:20px; }
+    .pin-dots { display:flex; gap:18px; margin-bottom:50px; }
+    .pin-dot { width:18px; height:18px; border-radius:50%; border:2px solid var(--bdr); transition:all 0.2s; }
+    .pin-dot.on { background:var(--red); border-color:var(--red); box-shadow:0 0 12px rgba(255,69,0,.5); }
+    .pin-pad { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; width:100%; max-width:280px; }
+    .pkey { background:var(--surf); border:1px solid var(--bdr); color:var(--txt); padding:22px; border-radius:14px; font-family:'Bebas Neue',cursive; font-size:30px; cursor:pointer; text-align:center; transition:all .15s; }
+    .pkey:active { background:var(--red); transform:scale(.93); }
+    .pkey.del { font-size:16px; color:var(--dim); }
+    .pin-err { color:var(--bad); font-size:13px; margin-top:20px; animation:shake .3s; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+    /* Layout */
+    .hdr { background:linear-gradient(135deg,var(--red),var(--red2)); padding:18px 20px; position:sticky; top:0; z-index:100; box-shadow:0 4px 20px rgba(255,69,0,.3); }
+    .hdr-t { font-family:'Bebas Neue',cursive; font-size:26px; letter-spacing:2px; text-align:center; }
+    .hdr-s { text-align:center; font-size:12px; opacity:.85; letter-spacing:1px; margin-top:4px; }
+    .sbar { display:flex; justify-content:space-around; background:var(--surf); padding:12px; border-bottom:1px solid var(--bdr); }
+    .si { text-align:center; cursor:pointer; padding:4px 10px; border-radius:8px; transition:all .2s; }
+    .si:active { background:rgba(255,69,0,.1); }
+    .sl { font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
+    .sv { font-size:18px; font-weight:bold; color:var(--red); font-family:'Bebas Neue',cursive; }
+    .wrap { padding:16px; max-width:600px; margin:0 auto; }
+    .card { background:var(--surf); border-radius:14px; padding:18px; margin-bottom:16px; border:1px solid var(--bdr); }
+    .ct { font-family:'Bebas Neue',cursive; font-size:22px; color:var(--red); letter-spacing:1px; margin-bottom:16px; text-align:center; }
+
+    /* Exercise */
+    .ex-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--bdr); }
+    .ex-name { font-family:'Bebas Neue',cursive; font-size:26px; color:var(--red); flex:1; }
+    .chk { width:32px; height:32px; border:2px solid var(--bdr); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; transition:all .3s; flex-shrink:0; }
+    .chk.done { background:var(--green); border-color:var(--green); color:#000; }
+
+    /* Weight */
+    .wbox { background:rgba(255,69,0,.08); border:1.5px solid var(--red); border-radius:10px; padding:14px; margin-bottom:14px; }
+    .wlbl { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+    .wval { font-size:38px; color:var(--red); font-family:'Bebas Neue',cursive; letter-spacing:2px; }
+    .wadj { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px; }
+    .wb { background:rgba(255,255,255,.06); border:1px solid var(--bdr); color:var(--txt); padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px; transition:all .2s; }
+    .wb:active { background:var(--red); border-color:var(--red); transform:scale(.95); }
+    .pbox { background:rgba(255,255,255,.04); padding:10px 12px; border-radius:8px; margin-top:10px; border-left:3px solid var(--red); }
+    .plbl { font-size:10px; color:var(--dim); margin-bottom:4px; text-transform:uppercase; letter-spacing:1px; }
+    .pval { font-size:14px; font-weight:bold; }
+
+    /* Sets */
+    .slbl { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+    .sgrid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+    .sbox { background:var(--sec); border:2px solid var(--bdr); border-radius:10px; padding:14px 8px; text-align:center; transition:all .3s; }
+    .sbox.hit { background:rgba(0,230,118,.15); border-color:var(--green); }
+    .sbox.miss { background:rgba(255,23,68,.15); border-color:var(--bad); }
+    .sn { font-size:10px; color:var(--dim); margin-bottom:6px; text-transform:uppercase; }
+    .sinput { width:100%; background:transparent; border:none; color:var(--txt); font-size:32px; font-weight:bold; text-align:center; font-family:'Bebas Neue',cursive; outline:none; }
+    .sinput::-webkit-inner-spin-button, .sinput::-webkit-outer-spin-button { -webkit-appearance:none; }
+
+    /* Alert */
+    .alrt { border-radius:8px; padding:12px; margin-bottom:14px; font-size:13px; line-height:1.5; }
+    .alrt.ok { background:rgba(0,230,118,.15); border:1px solid var(--green); color:var(--green); }
+    .alrt.ng { background:rgba(255,23,68,.15); border:1px solid var(--bad); color:var(--bad); }
+    .alrt.warn { background:rgba(255,170,0,.15); border:1px solid var(--warn); color:var(--warn); }
+
+    /* Timer */
+    .tcard { background:linear-gradient(135deg,var(--red2),var(--red)); border-radius:10px; padding:18px; text-align:center; margin-bottom:14px; }
+    .tdisp { font-size:54px; font-family:'Bebas Neue',cursive; letter-spacing:3px; margin-bottom:10px; }
+    .tdisp.tick { animation:pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+    .tpre { display:flex; gap:8px; justify-content:center; margin-bottom:10px; }
+    .tpb { background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.3); color:#fff; padding:8px 18px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:12px; letter-spacing:1px; transition:all .2s; }
+    .tpb.on { background:rgba(255,255,255,.35); border-color:#fff; }
+    .tpb:active { transform:scale(.95); }
+    .tctrls { display:flex; gap:10px; justify-content:center; }
+    .tb { background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.3); color:#fff; padding:10px 24px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px; transition:all .2s; }
+    .tb:active { background:rgba(255,255,255,.3); transform:scale(.95); }
+
+    /* Notes */
+    .ntxt { width:100%; background:var(--sec); border:1px solid var(--bdr); border-radius:8px; padding:12px; color:var(--txt); font-family:'Roboto Condensed',sans-serif; font-size:14px; resize:none; min-height:60px; }
+    .ntxt:focus { outline:none; border-color:var(--red); }
+
+    /* Nav */
+    .navb { position:fixed; bottom:0; left:0; right:0; display:flex; background:var(--surf); border-top:1px solid var(--bdr); box-shadow:0 -4px 20px rgba(0,0,0,.5); }
+    .nb { flex:1; padding:16px 4px; background:var(--sec); border:none; color:var(--txt); font-size:12px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:all .2s; font-family:'Roboto Condensed',sans-serif; }
+    .nb:active { background:var(--red); }
+    .nb.pr { background:var(--red); }
+    .nb.pr:active { background:var(--red2); }
+    .nb.dng { background:rgba(255,23,68,.15); color:var(--bad); }
+    .nb.dng:active { background:var(--bad); color:#fff; }
+    .nb:disabled { opacity:.3; cursor:not-allowed; }
+
+    /* Modal */
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:200; align-items:center; justify-content:center; padding:20px; }
+    .modal.open { display:flex; }
+    .mbox { background:var(--surf); border-radius:16px; padding:24px; max-width:500px; width:100%; border:1px solid var(--bdr); max-height:90vh; overflow-y:auto; }
+    .mt { font-family:'Bebas Neue',cursive; font-size:24px; color:var(--red); text-align:center; letter-spacing:2px; margin-bottom:20px; }
+    .btn { width:100%; padding:14px; border-radius:10px; cursor:pointer; font-weight:bold; font-size:14px; letter-spacing:1px; text-transform:uppercase; transition:all .2s; border:none; font-family:'Roboto Condensed',sans-serif; margin-bottom:10px; }
+    .btn:active { transform:scale(.97); }
+    .bpr { background:var(--red); color:#fff; }
+    .bsc { background:var(--sec); color:var(--txt); border:1px solid var(--bdr); }
+    .bdn { background:rgba(255,23,68,.15); color:var(--bad); border:1px solid var(--bad); }
+    .bok { background:var(--green); color:#000; }
+    .bsc:active { background:var(--bdr); }
+    .bdn:active { background:var(--bad); color:#fff; }
+
+    /* History */
+    .hi { background:var(--sec); border-radius:10px; padding:14px; margin-bottom:10px; border-left:3px solid var(--red); display:flex; justify-content:space-between; align-items:flex-start; }
+    .ht { font-weight:bold; color:var(--red); font-size:14px; margin-bottom:4px; }
+    .hm { font-size:12px; color:var(--dim); }
+    .delbtn { background:none; border:none; color:var(--bad); font-size:22px; cursor:pointer; padding:0 4px; }
+    .delbtn:active { transform:scale(1.2); }
+
+    /* Summary */
+    .sumex { background:var(--sec); border-radius:10px; padding:14px; margin-bottom:10px; }
+    .sumname { font-weight:bold; color:var(--red); margin-bottom:8px; }
+    .sumsets { display:flex; gap:6px; flex-wrap:wrap; }
+    .stag { padding:4px 10px; border-radius:6px; font-size:13px; font-weight:bold; }
+    .stag.ok { background:rgba(0,230,118,.2); color:var(--green); }
+    .stag.ng { background:rgba(255,23,68,.2); color:var(--bad); }
+    .stag.mt { background:rgba(255,255,255,.06); color:var(--dim); }
+    .sugg { margin-top:8px; font-size:12px; }
+    .sugg.up { color:var(--green); }
+    .sugg.dn { color:var(--bad); }
+
+    /* Day grid */
+    .daybtn { background:var(--sec); border:1px solid var(--bdr); color:var(--txt); padding:16px; border-radius:10px; cursor:pointer; width:100%; margin-bottom:10px; text-align:left; font-family:'Roboto Condensed',sans-serif; font-size:15px; font-weight:bold; transition:all .2s; display:flex; justify-content:space-between; align-items:center; }
+    .daybtn:active { background:var(--red); border-color:var(--red); }
+    .dtag { font-size:11px; color:var(--dim); font-weight:normal; }
+    .donetag { font-size:11px; color:var(--green); font-weight:bold; }
+
+    /* Week picker */
+    .wkbtn { background:var(--sec); border:1px solid var(--bdr); color:var(--txt); padding:14px; border-radius:10px; cursor:pointer; width:100%; margin-bottom:10px; text-align:left; font-family:'Roboto Condensed',sans-serif; font-size:14px; transition:all .2s; }
+    .wkbtn.sel { background:var(--red); border-color:var(--red); color:#fff; }
+    .wkbtn:active { background:var(--red); }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect } = React;
 
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+function calcPlates(total, bar) {
+  const per = (total - bar) / 2;
+  let rem = per; const out = [];
+  for (const p of [55,45,35,25,10,5,2.5]) {
+    const n = Math.floor(rem/p + 0.001);
+    if (n>0) { out.push(`${n}×${p%1?p:Math.floor(p)}`); rem=Math.round((rem-n*p)*10)/10; }
+  }
+  return out.length ? out.join(', ') : 'Bar only';
+}
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
+function calcRM(w, r) { return r>0 ? Math.round(w/(1.0278-0.0278*r)) : null; }
 
-    // Plate calculator function
-    function calculatePlates(totalWeight, barWeight) {
-      const perSide = (totalWeight - barWeight) / 2;
-      const plates = [];
-      let remaining = perSide;
-      
-      // Available plates: 55, 45, 35, 25, 10, 5, 2.5
-      const availablePlates = [55, 45, 35, 25, 10, 5, 2.5];
-      
-      for (const plate of availablePlates) {
-        const count = Math.floor(remaining / plate);
-        if (count > 0) {
-          plates.push(`${count}×${plate === Math.floor(plate) ? Math.floor(plate) : plate}`);
-          remaining -= count * plate;
-          remaining = Math.round(remaining * 10) / 10; // Round to 1 decimal
-        }
-      }
-      
-      if (remaining > 0.1) {
-        plates.push(`+${remaining.toFixed(1)}lb`);
-      }
-      
-      return plates.length > 0 ? plates.join(', ') : 'Empty bar';
+const WEEKS = {
+  28:{
+    label:"Week 28 — Deload", cycle:"Mesocycle 2 · Deload",
+    intensity:"90%", note:"3 reps · 2-3 sets",
+    next:"Week 29: Strength Test (AMRAP)",
+    rP:180, rA:120,
+    days:{
+      1:{title:"Chest & Triceps", ex:[
+        {id:1,name:"Bench Press",       w:267,bar:45,sets:3,reps:3,prim:true},
+        {id:2,name:"Close Grip Bench",  w:230,bar:45,sets:3,reps:3,prim:true},
+        {id:3,name:"Machine Side Raise",w:145,       sets:3,reps:6,prim:false},
+        {id:4,name:"Tricep Rope PD",    w:87.5,      sets:3,reps:6,prim:false},
+      ]},
+      2:{title:"Back & Calves", ex:[
+        {id:5,name:"Deadlift",          w:307,bar:50,sets:3,reps:3,prim:true},
+        {id:6,name:"Pull Ups",          w:"BW",      sets:3,reps:5,prim:false},
+        {id:7,name:"One Arm DB Row",    w:110,       sets:3,reps:6,prim:false},
+        {id:8,name:"Seated Calf Raise", w:190,       sets:3,reps:6,prim:false},
+      ]},
+      3:{title:"Shoulders & Biceps", ex:[
+        {id:9, name:"Military Press",   w:174,bar:45,sets:3,reps:3,prim:true},
+        {id:10,name:"Rear Delt Fly",    w:145,       sets:3,reps:6,prim:false},
+        {id:11,name:"DB Curls",         w:55,        sets:3,reps:6,prim:false},
+        {id:12,name:"Machine Side Raise",w:145,      sets:3,reps:6,prim:false},
+      ]},
+      4:{title:"Legs", ex:[
+        {id:13,name:"Barbell Squat",    w:165,bar:45,sets:3,reps:3,prim:true},
+        {id:14,name:"Leg Press",        w:425,bar:0, sets:3,reps:3,prim:true},
+        {id:15,name:"Leg Curl Lying",   w:135,       sets:3,reps:6,prim:false},
+        {id:16,name:"Standing Calf Raise",w:380,     sets:3,reps:6,prim:false},
+      ]},
+      5:{title:"Chest & Back", ex:[
+        {id:17,name:"Incline Bench",    w:227,bar:45,sets:3,reps:3,prim:true},
+        {id:18,name:"Flat Bench",       w:267,bar:45,sets:3,reps:3,prim:true},
+        {id:19,name:"Seated Cable Row", w:185,       sets:3,reps:6,prim:false},
+        {id:20,name:"Barbell Curl",     w:100,       sets:3,reps:6,prim:false},
+      ]},
     }
+  },
+  29:{
+    label:"Week 29 — Strength Test", cycle:"Strength Test Week",
+    intensity:"95% AMRAP", note:"Go to failure · 2 sets",
+    next:"Week 30: Mesocycle 3 (70%)",
+    rP:300, rA:120,
+    days:{
+      1:{title:"Chest Test", ex:[
+        {id:1,name:"Bench Press",      w:282,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:297},
+        {id:2,name:"Close Grip Bench", w:242,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:255},
+      ]},
+      2:{title:"Back Test", ex:[
+        {id:3,name:"Deadlift",         w:324,bar:50,sets:2,reps:"AMRAP",prim:true,test:true,rm:341},
+      ]},
+      3:{title:"Shoulders Test", ex:[
+        {id:4,name:"Military Press",   w:183,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:193},
+      ]},
+      4:{title:"Legs Test", ex:[
+        {id:5,name:"Barbell Squat",    w:174,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:183},
+        {id:6,name:"Leg Press",        w:448,bar:0, sets:2,reps:"AMRAP",prim:true,test:true,rm:472},
+      ]},
+      5:{title:"Chest Test 2", ex:[
+        {id:7,name:"Incline Bench",    w:239,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:252},
+      ]},
+    }
+  }
+};
 
-    // Program data - Week 28 Deload
-    const programData = {
-      week: 28,
-      cycle: "Mesocycle 2 - Deload",
-      nextWeek: "Week 29: Strength Test",
-      intensity: "90%",
-      restTime: {
-        primary: 180,    // 3 min for primary
-        accessory: 120   // 2 min for accessory
-      },
-      workouts: {
-        1: {
-          title: "Chest & Triceps",
-          exercises: [
-            { id: 1, name: "Bench Press", targetWeight: 267, barWeight: 45, plates: "2×45, 2×10", sets: 3, targetReps: 3, isPrimary: true },
-            { id: 2, name: "Close Grip Bench", targetWeight: 230, barWeight: 45, plates: "2×45, 1×10, 1×5", sets: 3, targetReps: 3, isPrimary: true },
-            { id: 3, name: "Machine Side Raise", targetWeight: 145, sets: 3, targetReps: 6, isPrimary: false },
-            { id: 4, name: "Tricep Rope Pulldown", targetWeight: 87.5, sets: 3, targetReps: 6, isPrimary: false }
-          ]
-        },
-        2: {
-          title: "Back & Calves",
-          exercises: [
-            { id: 5, name: "Deadlift", targetWeight: 307, barWeight: 50, plates: "1×55, 2×45, 1×5, 1×2.5", sets: 3, targetReps: 3, isPrimary: true },
-            { id: 6, name: "Pull Ups", targetWeight: "BW", sets: 3, targetReps: 5, isPrimary: false },
-            { id: 7, name: "One Arm DB Row", targetWeight: 110, sets: 3, targetReps: 6, isPrimary: false },
-            { id: 8, name: "Seated Calf Raise", targetWeight: 190, sets: 3, targetReps: 6, isPrimary: false }
-          ]
-        },
-        3: {
-          title: "Shoulders & Biceps",
-          exercises: [
-            { id: 9, name: "Military Press", targetWeight: 174, barWeight: 45, plates: "1×55, 1×10, 1×5", sets: 3, targetReps: 3, isPrimary: true },
-            { id: 10, name: "Rear Delt Fly", targetWeight: 145, sets: 3, targetReps: 3, isPrimary: false },
-            { id: 11, name: "DB Curls", targetWeight: 55, sets: 3, targetReps: 6, isPrimary: false },
-            { id: 12, name: "Machine Side Raise", targetWeight: 145, sets: 3, targetReps: 6, isPrimary: false }
-          ]
-        },
-        4: {
-          title: "Legs",
-          exercises: [
-            { id: 13, name: "Barbell Squat", targetWeight: 165, barWeight: 45, plates: "1×55, 1×5", sets: 3, targetReps: 3, isPrimary: true },
-            { id: 14, name: "Leg Press", targetWeight: 425, barWeight: 0, plates: "1×55, 3×45, 1×10, 1×2.5 per side", sets: 3, targetReps: 3, isPrimary: true },
-            { id: 15, name: "Leg Curl Lying", targetWeight: 135, sets: 3, targetReps: 6, isPrimary: false },
-            { id: 16, name: "Standing Calf Raise", targetWeight: 380, sets: 3, targetReps: 6, isPrimary: false }
-          ]
-        },
-        5: {
-          title: "Chest & Back",
-          exercises: [
-            { id: 17, name: "Incline Bench", targetWeight: 227, barWeight: 45, plates: "2×45, 1×10, 1×2.5", sets: 3, targetReps: 3, isPrimary: true },
-            { id: 18, name: "Flat Bench", targetWeight: 267, barWeight: 45, plates: "2×45, 2×10", sets: 3, targetReps: 3, isPrimary: true },
-            { id: 19, name: "Seated Cable Row", targetWeight: 185, sets: 3, targetReps: 6, isPrimary: false },
-            { id: 20, name: "Barbell Curl", targetWeight: 100, sets: 3, targetReps: 6, isPrimary: false }
-          ]
-        }
+// ── PIN Screen ─────────────────────────────────────────────────
+function PinScreen({ onUnlock }) {
+  const [pin, setPin] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [step, setStep] = useState('enter');
+  const [err, setErr] = useState('');
+  const setup = !localStorage.getItem('userPin');
+
+  const press = d => {
+    if (pin.length >= 4) return;
+    const np = pin + d; setPin(np); setErr('');
+    if (np.length === 4) setTimeout(() => {
+      if (setup) {
+        if (step==='enter') { setConfirm(np); setPin(''); setStep('confirm'); }
+        else if (np===confirm) { localStorage.setItem('userPin', np); onUnlock(); }
+        else { setErr("PINs don't match. Try again."); setPin(''); setStep('enter'); setConfirm(''); }
+      } else {
+        if (np === localStorage.getItem('userPin')) onUnlock();
+        else { setErr('Wrong PIN. Try again.'); setPin(''); }
       }
-    };
+    }, 120);
+  };
 
-    // Week 29 - Strength Test
-    const week29Data = {
-      week: 29,
-      cycle: "Strength Test Week",
-      nextWeek: "Week 30: Mesocycle 3 Start",
-      intensity: "95% AMRAP",
-      restTime: {
-        primary: 300,    // 5 min for max effort
-        accessory: 120
-      },
-      workouts: {
-        1: {
-          title: "Chest Test",
-          exercises: [
-            { id: 1, name: "Bench Press", currentRM: 297, targetWeight: 282, barWeight: 45, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true },
-            { id: 2, name: "Close Grip Bench", currentRM: 255, targetWeight: 242, barWeight: 45, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true }
-          ]
-        },
-        2: {
-          title: "Back Test",
-          exercises: [
-            { id: 3, name: "Deadlift", currentRM: 341, targetWeight: 324, barWeight: 50, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true }
-          ]
-        },
-        3: {
-          title: "Shoulders Test",
-          exercises: [
-            { id: 4, name: "Military Press", currentRM: 193, targetWeight: 183, barWeight: 45, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true }
-          ]
-        },
-        4: {
-          title: "Legs Test",
-          exercises: [
-            { id: 5, name: "Barbell Squat", currentRM: 183, targetWeight: 174, barWeight: 45, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true },
-            { id: 6, name: "Leg Press", currentRM: 472, targetWeight: 448, barWeight: 0, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true }
-          ]
-        },
-        5: {
-          title: "Chest Test 2",
-          exercises: [
-            { id: 7, name: "Incline Bench", currentRM: 252, targetWeight: 239, barWeight: 45, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true }
-          ]
-        }
-      }
-    };
+  return (
+    <div className="pin-screen">
+      <div className="pin-logo">BBLS</div>
+      <div className="pin-tag">Workout Tracker Pro</div>
+      <div className="pin-lbl">
+        {setup ? (step==='enter' ? 'Create your PIN' : 'Confirm your PIN') : 'Enter PIN to unlock'}
+      </div>
+      <div className="pin-dots">
+        {[0,1,2,3].map(i=><div key={i} className={`pin-dot${pin.length>i?' on':''}`}/>)}
+      </div>
+      <div className="pin-pad">
+        {[1,2,3,4,5,6,7,8,9].map(n=><button key={n} className="pkey" onClick={()=>press(String(n))}>{n}</button>)}
+        <div/>
+        <button className="pkey" onClick={()=>press('0')}>0</button>
+        <button className="pkey del" onClick={()=>{setPin(p=>p.slice(0,-1));setErr('');}}>⌫</button>
+      </div>
+      {err && <div className="pin-err">{err}</div>}
+    </div>
+  );
+}
 
-    function App() {
-      const [selectedWeek, setSelectedWeek] = useState(28);
-      const [selectedDay, setSelectedDay] = useState(null);
-      const [currentExercise, setCurrentExercise] = useState(0);
-      const [workoutState, setWorkoutState] = useState(() => {
-        const saved = localStorage.getItem('currentWorkoutState');
-        return saved ? JSON.parse(saved) : null;
+// ── Main App ───────────────────────────────────────────────────
+function App() {
+  const [unlocked, setUnlocked] = useState(()=>{
+    const t=localStorage.getItem('lastActive');
+    return t && (Date.now()-parseInt(t))<30*60*1000;
+  });
+  const [week, setWeek] = useState(28);
+  const [workout, setWorkout] = useState(null);
+  const [ei, setEi] = useState(0);
+  const [history, setHistory] = useState(()=>JSON.parse(localStorage.getItem('wh')||'[]'));
+  const [timer, setTimer] = useState(180);
+  const [ticking, setTicking] = useState(false);
+  const [preset, setPreset] = useState(3);
+  const [modal, setModal] = useState(null);
+
+  const wd = WEEKS[week];
+  const doneDays = history.filter(h=>h.week===week).map(h=>h.day);
+
+  useEffect(()=>{localStorage.setItem('wh',JSON.stringify(history));},[history]);
+  useEffect(()=>{if(unlocked)localStorage.setItem('lastActive',Date.now());},[unlocked]);
+
+  useEffect(()=>{
+    if(!ticking) return;
+    const id=setInterval(()=>{
+      setTimer(t=>{
+        if(t<=1){ setTicking(false); if(navigator.vibrate)navigator.vibrate([200,100,200,100,200]); return preset*60; }
+        return t-1;
       });
-      const [timerActive, setTimerActive] = useState(false);
-      const [timeRemaining, setTimeRemaining] = useState(180);
-      const [timerPreset, setTimerPreset] = useState(3);
-      const [workoutComplete, setWorkoutComplete] = useState(false);
-      const [showProgress, setShowProgress] = useState(false);
-      const [showDashboard, setShowDashboard] = useState(false);
-      const [showWeekSelector, setShowWeekSelector] = useState(false);
-      const [workoutHistory, setWorkoutHistory] = useState(() => {
-        const saved = localStorage.getItem('workoutHistory');
-        return saved ? JSON.parse(saved) : [];
-      });
+    },1000);
+    return ()=>clearInterval(id);
+  },[ticking,preset]);
 
-      const currentProgramData = selectedWeek === 29 ? week29Data : programData;
+  const fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  const setPre=m=>{setPreset(m);setTimer(m*60);setTicking(false);};
 
-      // Export to CSV function
-      const exportToCSV = () => {
-        if (workoutHistory.length === 0) {
-          alert('No workout data to export');
-          return;
-        }
+  const startDay=day=>{
+    const dayData=wd.days[day];
+    setWorkout({
+      week, day, title:dayData.title, date:new Date().toISOString(),
+      ex: dayData.ex.map(e=>({...e, cw:e.w, sets:Array(e.sets).fill(null), notes:'', done:false, sugg:null}))
+    });
+    setEi(0); setModal(null);
+  };
 
-        let csv = 'Date,Week,Day,Exercise,Weight,Set 1,Set 2,Set 3,Set 4,Notes\n';
-        
-        workoutHistory.forEach(workout => {
-          const date = new Date(workout.date).toLocaleDateString();
-          workout.exercises.forEach(exercise => {
-            const sets = exercise.sets.map(s => s || '').join(',');
-            csv += `${date},${selectedWeek},${workout.day},"${exercise.name}",${exercise.currentWeight},${sets},"${exercise.notes || ''}"\n`;
-          });
-        });
+  const ex=workout?workout.ex[ei]:null;
 
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `bbls-workout-history-${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      };
+  const updSet=(si,val)=>{
+    const w={...workout}; const e=w.ex[ei];
+    e.sets[si]=val!==''?parseInt(val):null;
+    const tgt=typeof e.reps==='number'?e.reps:6;
+    const filled=e.sets.filter(s=>s!==null);
+    const fails=filled.filter(s=>s<tgt).length;
+    if(!e.prim) e.sugg=filled.length===e.sets.length&&fails===0?'up':null;
+    else e.sugg=fails>=3?'down':null;
+    setWorkout(w);
+    if(val!==''&&si<e.sets.length-1){
+      const rest=e.prim?wd.rP:wd.rA;
+      setPre(rest/60); setTimer(rest); setTicking(true);
+    }
+  };
 
-      // Save workout state
-      useEffect(() => {
-        if (workoutState) {
-          localStorage.setItem('currentWorkoutState', JSON.stringify(workoutState));
-        }
-      }, [workoutState]);
+  const adjW=d=>{const w={...workout};const e=w.ex[ei];if(typeof e.cw==='number')e.cw=Math.max(0,e.cw+d);setWorkout(w);};
+  const togDone=()=>{const w={...workout};w.ex[ei].done=!w.ex[ei].done;setWorkout(w);};
+  const updNotes=v=>{const w={...workout};w.ex[ei].notes=v;setWorkout(w);};
 
-      // Save history
-      useEffect(() => {
-        localStorage.setItem('workoutHistory', JSON.stringify(workoutHistory));
-      }, [workoutHistory]);
+  const saveWorkout=()=>{setHistory(h=>[...h,workout]);setWorkout(null);setEi(0);setTicking(false);setModal(null);};
+  const abandon=()=>{setWorkout(null);setEi(0);setTicking(false);setModal(null);};
+  const delHist=i=>setHistory(h=>h.filter((_,j)=>j!==i));
 
-      // Timer logic
-      useEffect(() => {
-        let interval;
-        if (timerActive && timeRemaining > 0) {
-          interval = setInterval(() => {
-            setTimeRemaining(prev => {
-              if (prev <= 1) {
-                setTimerActive(false);
-                if (navigator.vibrate) {
-                  navigator.vibrate([200, 100, 200, 100, 200]);
-                }
-                return timerPreset * 60;
-              }
-              return prev - 1;
-            });
-          }, 1000);
-        }
-        return () => clearInterval(interval);
-      }, [timerActive, timeRemaining, timerPreset]);
+  const exportCSV=()=>{
+    if(!history.length)return;
+    let csv='Date,Week,Day,Exercise,Weight,Set1,Set2,Set3,Set4,Notes\n';
+    history.forEach(w=>{
+      const d=new Date(w.date).toLocaleDateString();
+      w.ex.forEach(e=>{csv+=`${d},${w.week},${w.day},"${e.name}",${e.cw},${e.sets.map(s=>s??'').join(',')},"${e.notes||''}"\n`;});
+    });
+    const a=Object.assign(document.createElement('a'),{
+      href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),
+      download:`bbls-${new Date().toISOString().slice(0,10)}.csv`
+    });
+    a.click();
+  };
 
-      const startWorkout = (dayNumber) => {
-        const workout = currentProgramData.workouts[dayNumber];
-        setSelectedDay(dayNumber);
-        setCurrentExercise(0);
-        setWorkoutState({
-          week: selectedWeek,
-          day: dayNumber,
-          title: workout.title,
-          date: new Date().toISOString(),
-          exercises: workout.exercises.map(ex => ({
-            ...ex,
-            currentWeight: ex.targetWeight,
-            sets: Array(ex.sets).fill(null),
-            notes: '',
-            completed: false
-          }))
-        });
-        setWorkoutComplete(false);
-      };
+  if(!unlocked) return <PinScreen onUnlock={()=>setUnlocked(true)}/>;
 
-      const updateSet = (setIndex, value) => {
-        const newState = { ...workoutState };
-        const exercise = newState.exercises[currentExercise];
-        exercise.sets[setIndex] = value ? parseInt(value) : null;
-        
-        // Check if we should suggest weight adjustment
-        const targetMin = typeof exercise.targetReps === 'number' ? exercise.targetReps : parseInt(exercise.targetReps.split('-')[0]);
-        const failedSets = exercise.sets.filter((reps, idx) => idx < 3 && reps !== null && reps < targetMin).length;
-        
-        if (failedSets >= 3 && exercise.isPrimary) {
-          exercise.suggestion = "DECREASE";
-        } else if (exercise.sets.filter(r => r !== null && r >= targetMin).length === exercise.sets.length) {
-          if (!exercise.isPrimary) {
-            exercise.suggestion = "INCREASE";
-          }
-        }
-        
-        setWorkoutState(newState);
-        
-        // Auto-start timer
-        if (value && setIndex < exercise.sets.length - 1) {
-          const restTime = exercise.isPrimary ? programData.restTime.primary : programData.restTime.accessory;
-          setTimerPreset(restTime / 60);
-          setTimeRemaining(restTime);
-          setTimerActive(true);
-        }
-      };
-
-      const adjustWeight = (amount) => {
-        const newState = { ...workoutState };
-        const exercise = newState.exercises[currentExercise];
-        exercise.currentWeight = Math.max(0, exercise.currentWeight + amount);
-        setWorkoutState(newState);
-      };
-
-      const toggleComplete = () => {
-        const newState = { ...workoutState };
-        newState.exercises[currentExercise].completed = !newState.exercises[currentExercise].completed;
-        setWorkoutState(newState);
-      };
-
-      const updateNotes = (notes) => {
-        const newState = { ...workoutState };
-        newState.exercises[currentExercise].notes = notes;
-        setWorkoutState(newState);
-      };
-
-      const goNext = () => {
-        if (currentExercise < workoutState.exercises.length - 1) {
-          setCurrentExercise(prev => prev + 1);
-          setTimerActive(false);
-        } else {
-          finishWorkout();
-        }
-      };
-
-      const goPrev = () => {
-        if (currentExercise > 0) {
-          setCurrentExercise(prev => prev - 1);
-          setTimerActive(false);
-        }
-      };
-
-      const finishWorkout = () => {
-        const history = [...workoutHistory, workoutState];
-        setWorkoutHistory(history);
-        setWorkoutComplete(true);
-        localStorage.removeItem('currentWorkoutState');
-      };
-
-      const resetWorkout = () => {
-        setWorkoutState(null);
-        setSelectedDay(null);
-        setCurrentExercise(0);
-        setWorkoutComplete(false);
-        setTimerActive(false);
-        localStorage.removeItem('currentWorkoutState');
-      };
-
-      const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-      };
-
-      const setTimerPresetTime = (minutes) => {
-        setTimerPreset(minutes);
-        setTimeRemaining(minutes * 60);
-        setTimerActive(false);
-      };
-
-      // Day Selection Screen
-      if (!workoutState || workoutComplete) {
-        return (
-          <div>
-            <div className="header">
-              <div className="header-title">BBLS Tracker Pro</div>
-              <div className="header-subtitle">{programData.cycle}</div>
+  // ── Save Confirmation ─────────────────────────────────────────
+  if(modal==='save'&&workout){
+    return(
+      <div>
+        <div className="hdr"><div className="hdr-t">Save Workout?</div><div className="hdr-s">Review before saving</div></div>
+        <div className="wrap" style={{paddingTop:20}}>
+          <div className="card">
+            <div className="ct">Week {workout.week} · Day {workout.day}: {workout.title}</div>
+            <div style={{color:'var(--dim)',fontSize:13,textAlign:'center',marginBottom:16}}>
+              {new Date(workout.date).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}
             </div>
-
-            <div className="status-bar">
-              <div className="status-item" onClick={() => setShowWeekSelector(true)}>
-                <div className="status-label">Week</div>
-                <div className="status-value">{selectedWeek}</div>
-              </div>
-              <div className="status-item" onClick={() => setShowDashboard(true)}>
-                <div className="status-label">Cycle</div>
-                <div className="status-value">{currentProgramData.intensity}</div>
-              </div>
-              <div className="status-item" onClick={() => setShowProgress(true)}>
-                <div className="status-label">History</div>
-                <div className="status-value">{workoutHistory.length}</div>
-              </div>
-            </div>
-
-            {workoutComplete && (
-              <div className="container">
-                <div className="workout-card">
-                  <div className="modal-title">💪 Workout Complete!</div>
-                  <div style={{textAlign: 'center', marginBottom: '20px'}}>
-                    <div style={{fontSize: '18px', color: 'var(--primary)', marginBottom: '10px'}}>
-                      {workoutState.title}
-                    </div>
-                    <div style={{fontSize: '14px', color: 'var(--text-dim)'}}>
-                      {new Date(workoutState.date).toLocaleDateString()}
-                    </div>
+            {workout.ex.map((e,i)=>{
+              const t=typeof e.reps==='number'?e.reps:6;
+              return(
+                <div key={i} className="sumex">
+                  <div className="sumname">{e.name} — {e.cw} lbs</div>
+                  <div className="sumsets">
+                    {e.sets.map((s,j)=>(
+                      <span key={j} className={`stag ${s===null?'mt':s>=t?'ok':'ng'}`}>
+                        {s===null?'—':`${s} reps`}
+                      </span>
+                    ))}
                   </div>
-                  
-                  {workoutState.exercises.map((ex, idx) => (
-                    <div key={idx} className="progress-item">
-                      <div className="progress-exercise">{ex.name}</div>
-                      <div className="progress-sets">
-                        Sets: {ex.sets.map((s, i) => 
-                          <span key={i} style={{marginRight: '8px', color: s ? 'var(--success)' : 'var(--text-dim)'}}>
-                            {s || '-'}
-                          </span>
-                        )}
-                      </div>
-                      {ex.suggestion && (
-                        <div style={{marginTop: '8px', fontSize: '12px', color: ex.suggestion === 'INCREASE' ? 'var(--success)' : 'var(--warning)'}}>
-                          💡 Next week: {ex.suggestion === 'INCREASE' ? '+10 lbs' : '-10 lbs'}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  
-                  <button className="modal-close" onClick={resetWorkout}>
-                    Back to Workouts
-                  </button>
+                  {e.sugg==='up'&&<div className="sugg up">💪 Next week: +10 lbs</div>}
+                  {e.sugg==='down'&&<div className="sugg dn">⚠️ Next week: -10 lbs</div>}
+                  {e.test&&e.sets[0]&&<div className="sugg up">🎯 New 1RM est: {calcRM(e.cw,e.sets[0])} lbs</div>}
                 </div>
-              </div>
-            )}
+              );
+            })}
+          </div>
+          <button className="btn bok" onClick={saveWorkout}>✓ Save Workout</button>
+          <button className="btn bsc" onClick={()=>setModal(null)}>← Keep Editing</button>
+          <button className="btn bdn" onClick={abandon}>✕ Discard Without Saving</button>
+        </div>
+      </div>
+    );
+  }
 
-            {!workoutComplete && (
-              <div className="container">
-                <div className="workout-card">
-                  <div className="modal-title">Select Today's Workout</div>
-                  <div style={{marginBottom: '15px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '14px'}}>
-                    {selectedWeek === 29 ? '⚠️ AMRAP Test - Go to failure on Set 1!' : currentProgramData.cycle}
-                  </div>
-                  {Object.entries(currentProgramData.workouts).map(([day, workout]) => (
-                    <button
-                      key={day}
-                      className="modal-close"
-                      style={{marginBottom: '10px', background: 'var(--primary)'}}
-                      onClick={() => startWorkout(parseInt(day))}
-                    >
-                      Day {day}: {workout.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Week Selector Modal */}
-            <div className={`modal ${showWeekSelector ? 'active' : ''}`}>
-              <div className="modal-content">
-                <div className="modal-title">Select Week</div>
-                <button 
-                  className="modal-close" 
-                  style={{marginBottom: '10px', background: selectedWeek === 28 ? 'var(--primary)' : 'var(--secondary)'}}
-                  onClick={() => { setSelectedWeek(28); setShowWeekSelector(false); }}
-                >
-                  Week 28 - Deload (90%, 3 reps)
-                </button>
-                <button 
-                  className="modal-close" 
-                  style={{marginBottom: '10px', background: selectedWeek === 29 ? 'var(--primary)' : 'var(--secondary)'}}
-                  onClick={() => { setSelectedWeek(29); setShowWeekSelector(false); }}
-                >
-                  Week 29 - Strength Test (95% AMRAP)
-                </button>
-                <button className="modal-close" onClick={() => setShowWeekSelector(false)}>Cancel</button>
-              </div>
-            </div>
-
-            {/* Dashboard Modal */}
-            <div className={`modal ${showDashboard ? 'active' : ''}`}>
-              <div className="modal-content">
-                <div className="modal-title">Program Dashboard</div>
-                <div className="progress-item">
-                  <div className="progress-header">
-                    <span>Current Week</span>
-                    <span className="progress-exercise">Week {selectedWeek}</span>
-                  </div>
-                  <div className="progress-sets">{currentProgramData.cycle}</div>
-                </div>
-                <div className="progress-item">
-                  <div className="progress-header">
-                    <span>Intensity</span>
-                    <span className="progress-exercise">{currentProgramData.intensity}</span>
-                  </div>
-                  <div className="progress-sets">
-                    {selectedWeek === 28 ? '3 reps, 2-3 sets (Deload)' : '95% weight, AMRAP reps (Test)'}
-                  </div>
-                </div>
-                <div className="progress-item">
-                  <div className="progress-header">
-                    <span>Next Week</span>
-                    <span className="progress-exercise">{currentProgramData.nextWeek}</span>
-                  </div>
-                  <div className="progress-sets">
-                    {selectedWeek === 28 ? 'AMRAP testing to establish new 1RMs' : 'Start Mesocycle 3 with new 1RMs'}
-                  </div>
-                </div>
-                <div className="progress-item">
-                  <div className="progress-header">
-                    <span>Workouts This Week</span>
-                    <span className="progress-exercise">{workoutHistory.filter(w => w.week === selectedWeek).length}</span>
-                  </div>
-                </div>
-                <button className="modal-close" onClick={() => setShowDashboard(false)}>Close</button>
-              </div>
-            </div>
-
-            {/* Progress Modal */}
-            <div className={`modal ${showProgress ? 'active' : ''}`}>
-              <div className="modal-content">
-                <div className="modal-title">Workout History</div>
-                {workoutHistory.length === 0 ? (
-                  <div style={{textAlign: 'center', padding: '20px', color: 'var(--text-dim)'}}>
-                    No workouts logged yet
-                  </div>
-                ) : (
+  // ── Home / Day Selector ───────────────────────────────────────
+  if(!workout){
+    return(
+      <div>
+        <div className="hdr">
+          <div className="hdr-t">BBLS Tracker Pro</div>
+          <div className="hdr-s">{wd.cycle} · {wd.note}</div>
+        </div>
+        <div className="sbar">
+          <div className="si" onClick={()=>setModal('week')}><div className="sl">Week</div><div className="sv">{week}</div></div>
+          <div className="si" onClick={()=>setModal('dash')}><div className="sl">Intensity</div><div className="sv">{wd.intensity}</div></div>
+          <div className="si" onClick={()=>setModal('hist')}><div className="sl">Saved</div><div className="sv">{history.length}</div></div>
+        </div>
+        <div className="wrap">
+          <div className="card">
+            <div className="ct">Select Today's Workout</div>
+            {Object.entries(wd.days).map(([d,data])=>{
+              const done=doneDays.includes(parseInt(d));
+              return(
+                <button key={d} className="daybtn" onClick={()=>startDay(parseInt(d))}>
                   <div>
-                    <div style={{maxHeight: '400px', overflowY: 'auto'}}>
-                      {workoutHistory.slice().reverse().map((workout, idx) => (
-                        <div key={idx} className="progress-item">
-                          <div className="progress-header">
-                            <span className="progress-exercise">Week {workout.week} Day {workout.day}: {workout.title}</span>
-                            <span className="progress-date">{new Date(workout.date).toLocaleDateString()}</span>
-                          </div>
-                          <div className="progress-sets">
-                            {workout.exercises.length} exercises • {workout.exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s).length, 0)} sets
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <button 
-                      className="modal-close" 
-                      style={{marginTop: '10px', background: 'var(--primary)'}}
-                      onClick={exportToCSV}
-                    >
-                      📊 Export to Spreadsheet (CSV)
-                    </button>
+                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:1}}>Day {d}: {data.title}</div>
+                    <div style={{fontSize:11,color:'var(--dim)',marginTop:2}}>{data.ex.length} exercises · {wd.note}</div>
                   </div>
-                )}
-                <button className="modal-close" onClick={() => setShowProgress(false)}>Close</button>
-              </div>
-            </div>
+                  {done&&<span className="donetag">✓ Done</span>}
+                </button>
+              );
+            })}
           </div>
-        );
-      }
-
-      // Active Workout Screen
-      const exercise = workoutState.exercises[currentExercise];
-      const targetMin = typeof exercise.targetReps === 'number' ? exercise.targetReps : parseInt(exercise.targetReps.split('-')[0]);
-      const failedSets = exercise.sets.filter((reps, idx) => idx < 3 && reps !== null && reps < targetMin).length;
-
-      return (
-        <div>
-          <div className="header">
-            <div className="header-title">Week {workoutState.week} Day {selectedDay}: {workoutState.title}</div>
-            <div className="header-subtitle">{currentProgramData.cycle}</div>
-          </div>
-
-          <div className="status-bar">
-            <div className="status-item">
-              <div className="status-label">Exercise</div>
-              <div className="status-value">{currentExercise + 1}/{workoutState.exercises.length}</div>
-            </div>
-            <div className="status-item">
-              <div className="status-label">Completed</div>
-              <div className="status-value">{workoutState.exercises.filter(e => e.completed).length}/{workoutState.exercises.length}</div>
-            </div>
-            <div className="status-item">
-              <div className="status-label">Sets</div>
-              <div className="status-value">{exercise.sets.filter(s => s !== null).length}/{exercise.sets.length}</div>
-            </div>
-          </div>
-
-          <div className="container">
-            <div className="workout-card">
-              <div className="exercise-header">
-                <div className="exercise-name">{exercise.name}</div>
-                <div 
-                  className={`exercise-complete ${exercise.completed ? 'checked' : ''}`}
-                  onClick={toggleComplete}
-                />
-              </div>
-
-              {failedSets >= 3 && exercise.isPrimary && !exercise.isTest && (
-                <div className="alert-banner danger">
-                  ⚠️ Missed target on 3+ sets. Consider decreasing weight by 10 lbs next week.
-                </div>
-              )}
-
-              {exercise.suggestion === 'INCREASE' && (
-                <div className="alert-banner success">
-                  💪 Hit all target reps! Increase weight by 10 lbs next week.
-                </div>
-              )}
-
-              {exercise.isTest && exercise.sets[0] !== null && (
-                <div className="alert-banner success">
-                  🎯 New 1RM: <strong>{Math.round(exercise.currentWeight / (1.0278 - 0.0278 * exercise.sets[0]))} lbs</strong>
-                  <div style={{fontSize: '11px', marginTop: '5px', opacity: 0.8}}>
-                    Based on {exercise.sets[0]} reps at {exercise.currentWeight} lbs
+          <div className="card">
+            <div className="ct">This Week</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8}}>
+              {[1,2,3,4,5].map(d=>{
+                const done=doneDays.includes(d);
+                return(
+                  <div key={d} style={{background:done?'rgba(0,230,118,.15)':'var(--sec)',border:`1px solid ${done?'var(--green)':'var(--bdr)'}`,borderRadius:8,padding:'10px 4px',textAlign:'center'}}>
+                    <div style={{fontSize:10,color:'var(--dim)',marginBottom:4}}>D{d}</div>
+                    <div style={{fontSize:18,color:done?'var(--green)':'var(--dim)'}}>{done?'✓':'○'}</div>
                   </div>
-                </div>
-              )}
-
-              <div className="weight-display">
-                <div className="weight-label">Working Weight</div>
-                <div className="weight-value">{exercise.currentWeight} {typeof exercise.currentWeight === 'number' ? 'LBS' : ''}</div>
-                
-                {typeof exercise.currentWeight === 'number' && (
-                  <div className="weight-adjust">
-                    <button className="weight-btn" onClick={() => adjustWeight(-10)}>-10 lbs</button>
-                    <button className="weight-btn" onClick={() => adjustWeight(-5)}>-5 lbs</button>
-                    <button className="weight-btn" onClick={() => adjustWeight(5)}>+5 lbs</button>
-                    <button className="weight-btn" onClick={() => adjustWeight(10)}>+10 lbs</button>
-                  </div>
-                )}
-                
-                {exercise.barWeight && typeof exercise.currentWeight === 'number' && (
-                  <div className="plates-info">
-                    <div className="plates-label">Load Per Side:</div>
-                    <div className="plates-value">{calculatePlates(exercise.currentWeight, exercise.barWeight)}</div>
-                  </div>
-                )}
-              </div>
-
-              <div className="weight-label" style={{marginBottom: '10px'}}>
-                Log Your Sets ({exercise.targetReps} reps target)
-              </div>
-              <div className="sets-grid">
-                {exercise.sets.map((reps, idx) => {
-                  const isFailed = reps !== null && reps < targetMin;
-                  const isCompleted = reps !== null && reps >= targetMin;
-                  return (
-                    <div 
-                      key={idx} 
-                      className={`set-box ${isCompleted ? 'completed' : ''} ${isFailed ? 'failed' : ''}`}
-                    >
-                      <div className="set-label">Set {idx + 1}</div>
-                      <input 
-                        type="number"
-                        className="set-input"
-                        value={reps || ''}
-                        onChange={(e) => updateSet(idx, e.target.value)}
-                        placeholder="-"
-                        inputMode="numeric"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="rest-timer">
-                <div className={`timer-display ${timerActive ? 'active' : ''}`}>
-                  {formatTime(timeRemaining)}
-                </div>
-                <div className="timer-presets">
-                  <button 
-                    className={`timer-preset-btn ${timerPreset === 2 ? 'active' : ''}`}
-                    onClick={() => setTimerPresetTime(2)}
-                  >
-                    2 MIN
-                  </button>
-                  <button 
-                    className={`timer-preset-btn ${timerPreset === 3 ? 'active' : ''}`}
-                    onClick={() => setTimerPresetTime(3)}
-                  >
-                    3 MIN
-                  </button>
-                  <button 
-                    className={`timer-preset-btn ${timerPreset === 5 ? 'active' : ''}`}
-                    onClick={() => setTimerPresetTime(5)}
-                  >
-                    5 MIN
-                  </button>
-                </div>
-                <div className="timer-controls">
-                  <button 
-                    className="timer-btn"
-                    onClick={() => setTimerActive(!timerActive)}
-                  >
-                    {timerActive ? 'Pause' : 'Start'}
-                  </button>
-                  <button 
-                    className="timer-btn"
-                    onClick={() => {
-                      setTimeRemaining(timerPreset * 60);
-                      setTimerActive(false);
-                    }}
-                  >
-                    Reset
-                  </button>
-                </div>
-              </div>
-
-              <div className="notes-section">
-                <div className="weight-label" style={{marginBottom: '8px'}}>Notes</div>
-                <textarea 
-                  className="notes-textarea"
-                  placeholder="Weight adjustments, form notes, etc..."
-                  value={exercise.notes}
-                  onChange={(e) => updateNotes(e.target.value)}
-                />
-              </div>
+                );
+              })}
             </div>
-          </div>
-
-          <div className="nav-buttons">
-            <button 
-              className="nav-btn"
-              onClick={goPrev}
-              disabled={currentExercise === 0}
-            >
-              ← Previous
-            </button>
-            <button 
-              className="nav-btn primary"
-              onClick={goNext}
-            >
-              {currentExercise === workoutState.exercises.length - 1 ? 'Finish' : 'Next →'}
-            </button>
           </div>
         </div>
-      );
-    }
 
-    ReactDOM.render(<App />, document.getElementById('root'));
-  </script>
+        {/* Week Selector */}
+        <div className={`modal${modal==='week'?' open':''}`}>
+          <div className="mbox">
+            <div className="mt">Select Week</div>
+            {Object.entries(WEEKS).map(([w,d])=>(
+              <button key={w} className={`wkbtn${week===parseInt(w)?' sel':''}`} onClick={()=>{setWeek(parseInt(w));setModal(null);}}>
+                <strong>{d.label}</strong>
+                <div style={{fontSize:11,marginTop:3,opacity:.7}}>{d.note}</div>
+              </button>
+            ))}
+            <button className="btn bsc" onClick={()=>setModal(null)}>Cancel</button>
+          </div>
+        </div>
+
+        {/* Dashboard */}
+        <div className={`modal${modal==='dash'?' open':''}`}>
+          <div className="mbox">
+            <div className="mt">Program Dashboard</div>
+            {[['Current Week',`Week ${week}`],['Cycle',wd.cycle],['Intensity',wd.intensity],['Protocol',wd.note],['Next Week',wd.next],['Done This Week',`${doneDays.length} / 5`],['Total Saved',`${history.length}`]].map(([l,v])=>(
+              <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'12px 0',borderBottom:'1px solid var(--bdr)'}}>
+                <span style={{color:'var(--dim)',fontSize:13}}>{l}</span>
+                <span style={{color:'var(--red)',fontWeight:'bold',fontSize:13}}>{v}</span>
+              </div>
+            ))}
+            <button className="btn bsc" style={{marginTop:20}} onClick={()=>setModal(null)}>Close</button>
+          </div>
+        </div>
+
+        {/* History */}
+        <div className={`modal${modal==='hist'?' open':''}`}>
+          <div className="mbox">
+            <div className="mt">Workout History</div>
+            {!history.length
+              ? <div style={{textAlign:'center',padding:20,color:'var(--dim)'}}>No workouts saved yet</div>
+              : <div style={{maxHeight:400,overflowY:'auto'}}>
+                  {history.slice().reverse().map((h,ri)=>{
+                    const i=history.length-1-ri;
+                    return(
+                      <div key={i} className="hi">
+                        <div style={{flex:1}}>
+                          <div className="ht">Week {h.week} Day {h.day}: {h.title}</div>
+                          <div className="hm">{new Date(h.date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})} · {h.ex.length} exercises</div>
+                        </div>
+                        <button className="delbtn" onClick={()=>delHist(i)}>🗑</button>
+                      </div>
+                    );
+                  })}
+                </div>
+            }
+            {history.length>0&&<button className="btn bpr" style={{marginTop:10}} onClick={exportCSV}>📊 Export to CSV</button>}
+            <button className="btn bsc" onClick={()=>setModal(null)}>Close</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Active Workout ─────────────────────────────────────────────
+  const tgt=typeof ex.reps==='number'?ex.reps:6;
+  const fails=ex.sets.filter(s=>s!==null&&s<tgt).length;
+  const total=workout.ex.reduce((a,e)=>a+e.sets.filter(s=>s!==null).length,0);
+  const poss=workout.ex.reduce((a,e)=>a+e.sets.length,0);
+
+  return(
+    <div>
+      <div className="hdr">
+        <div className="hdr-t">Wk{workout.week} D{workout.day}: {workout.title}</div>
+        <div className="hdr-s">{wd.cycle} · {wd.intensity}</div>
+      </div>
+      <div className="sbar">
+        <div className="si"><div className="sl">Exercise</div><div className="sv">{ei+1}/{workout.ex.length}</div></div>
+        <div className="si"><div className="sl">Sets Done</div><div className="sv">{total}/{poss}</div></div>
+        <div className="si"><div className="sl">Checked</div><div className="sv">{workout.ex.filter(e=>e.done).length}/{workout.ex.length}</div></div>
+      </div>
+      <div className="wrap">
+        <div className="card">
+          <div className="ex-hdr">
+            <div className="ex-name">{ex.name}</div>
+            <div className={`chk${ex.done?' done':''}`} onClick={togDone}>{ex.done?'✓':''}</div>
+          </div>
+
+          {ex.test&&ex.sets[0]!=null&&<div className="alrt ok">🎯 Est. New 1RM: <strong>{calcRM(ex.cw,ex.sets[0])} lbs</strong><div style={{fontSize:11,marginTop:4,opacity:.8}}>{ex.sets[0]} reps @ {ex.cw} lbs</div></div>}
+          {!ex.test&&fails>=3&&ex.prim&&<div className="alrt ng">⚠️ Missed target 3+ sets — consider -10 lbs next week</div>}
+          {ex.sugg==='up'&&<div className="alrt ok">💪 All sets hit! Next week +10 lbs</div>}
+
+          <div className="wbox">
+            <div className="wlbl">Working Weight</div>
+            <div className="wval">{ex.cw}{typeof ex.cw==='number'?' LBS':''}</div>
+            {typeof ex.cw==='number'&&(
+              <div className="wadj">
+                <button className="wb" onClick={()=>adjW(-10)}>-10</button>
+                <button className="wb" onClick={()=>adjW(-5)}>-5</button>
+                <button className="wb" onClick={()=>adjW(5)}>+5</button>
+                <button className="wb" onClick={()=>adjW(10)}>+10</button>
+              </div>
+            )}
+            {typeof ex.cw==='number'&&typeof ex.bar==='number'&&(
+              <div className="pbox">
+                <div className="plbl">Load Per Side</div>
+                <div className="pval">
+                  {ex.bar===0 ? `${ex.cw/2} lbs per side` : calcPlates(ex.cw, ex.bar)}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="slbl">Log Sets · Target: {ex.reps} reps</div>
+          <div className="sgrid">
+            {ex.sets.map((r,si)=>{
+              const hit=r!==null&&r>=tgt, miss=r!==null&&r<tgt;
+              return(
+                <div key={si} className={`sbox${hit?' hit':miss?' miss':''}`}>
+                  <div className="sn">Set {si+1}</div>
+                  <input className="sinput" type="number" inputMode="numeric" value={r??''} placeholder="—" onChange={e=>updSet(si,e.target.value)}/>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="tcard">
+            <div className={`tdisp${ticking?' tick':''}`}>{fmt(timer)}</div>
+            <div className="tpre">
+              {[2,3,5].map(m=><button key={m} className={`tpb${preset===m?' on':''}`} onClick={()=>setPre(m)}>{m} MIN</button>)}
+            </div>
+            <div className="tctrls">
+              <button className="tb" onClick={()=>setTicking(t=>!t)}>{ticking?'Pause':'Start'}</button>
+              <button className="tb" onClick={()=>{setTimer(preset*60);setTicking(false);}}>Reset</button>
+            </div>
+          </div>
+
+          <div className="wlbl" style={{margin:'14px 0 8px'}}>Notes</div>
+          <textarea className="ntxt" placeholder="Form notes, weight changes..." value={ex.notes} onChange={e=>updNotes(e.target.value)}/>
+        </div>
+      </div>
+
+      {/* Abandon confirm */}
+      <div className={`modal${modal==='quit'?' open':''}`}>
+        <div className="mbox">
+          <div className="mt">Quit Workout?</div>
+          <p style={{textAlign:'center',color:'var(--dim)',marginBottom:20,fontSize:14}}>This workout will NOT be saved. All logged sets will be lost.</p>
+          <button className="btn bdn" onClick={abandon}>Yes, Discard Workout</button>
+          <button className="btn bsc" onClick={()=>setModal(null)}>Keep Going</button>
+        </div>
+      </div>
+
+      <div className="navb">
+        <button className="nb dng" onClick={()=>setModal('quit')}>✕ Quit</button>
+        <button className="nb" onClick={()=>ei>0&&setEi(i=>i-1)} disabled={ei===0}>← Prev</button>
+        <button className="nb" onClick={()=>ei<workout.ex.length-1&&setEi(i=>i+1)} disabled={ei===workout.ex.length-1}>Next →</button>
+        <button className="nb pr" onClick={()=>setModal('save')}>✓ Finish</button>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(<App/>,document.getElementById('root'));
+</script>
 </body>
 </html>
