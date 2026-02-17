@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>BBLS Tracker Pro</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Condensed:wght@400;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    :root {
+      --primary: #FF4500;
+      --primary-dark: #CC3700;
+      --secondary: #1a1a1a;
+      --bg: #0a0a0a;
+      --surface: #1a1a1a;
+      --text: #ffffff;
+      --text-dim: #888888;
+      --success: #00ff00;
+      --warning: #ffaa00;
+      --danger: #ff0000;
+      --border: #333333;
+    }
+    
+    body {
+      font-family: 'Roboto Condensed', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      padding: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(255, 69, 0, 0.3);
+    }
+    
+    .header-title {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 28px;
+      letter-spacing: 2px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    
+    .header-subtitle {
+      text-align: center;
+      font-size: 14px;
+      opacity: 0.9;
+      letter-spacing: 1px;
+    }
+    
+    .status-bar {
+      display: flex;
+      justify-content: space-around;
+      background: var(--surface);
+      padding: 12px;
+      border-bottom: 2px solid var(--border);
+    }
+    
+    .status-item {
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .status-item:active {
+      transform: scale(0.95);
+    }
+    
+    .status-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    
+    .status-value {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    
+    .container {
+      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .workout-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+    
+    .exercise-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--border);
+    }
+    
+    .exercise-name {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 24px;
+      letter-spacing: 1px;
+      color: var(--primary);
+    }
+    
+    .exercise-complete {
+      width: 30px;
+      height: 30px;
+      border: 3px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .exercise-complete.checked {
+      background: var(--success);
+      border-color: var(--success);
+    }
+    
+    .exercise-complete.checked::after {
+      content: '✓';
+      color: var(--bg);
+      font-weight: bold;
+      font-size: 18px;
+    }
+    
+    .weight-display {
+      background: rgba(255, 69, 0, 0.1);
+      border: 2px solid var(--primary);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .weight-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+    
+    .weight-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--primary);
+      font-family: 'Bebas Neue', cursive;
+      letter-spacing: 2px;
+    }
+    
+    .weight-adjust {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .weight-btn {
+      flex: 1;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 12px;
+      transition: all 0.3s;
+    }
+    
+    .weight-btn:active {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .plates-info {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 10px;
+      border-left: 3px solid var(--primary);
+    }
+    
+    .plates-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .plates-value {
+      font-size: 14px;
+      color: var(--text);
+      font-weight: bold;
+    }
+    
+    .sets-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .set-box {
+      background: var(--secondary);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 15px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+    }
+    
+    .set-box:active {
+      transform: scale(0.95);
+    }
+    
+    .set-box.completed {
+      background: rgba(0, 255, 0, 0.2);
+      border-color: var(--success);
+    }
+    
+    .set-box.failed {
+      background: rgba(255, 0, 0, 0.2);
+      border-color: var(--danger);
+    }
+    
+    .set-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .set-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 28px;
+      font-weight: bold;
+      text-align: center;
+      font-family: 'Bebas Neue', cursive;
+      outline: none;
+    }
+    
+    .set-input::-webkit-inner-spin-button,
+    .set-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    .rest-timer {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin-top: 15px;
+      box-shadow: 0 4px 12px rgba(255, 69, 0, 0.4);
+    }
+    
+    .timer-display {
+      font-size: 48px;
+      font-weight: bold;
+      font-family: 'Bebas Neue', cursive;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+    
+    .timer-presets {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    
+    .timer-preset-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 11px;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+    }
+    
+    .timer-preset-btn.active {
+      background: rgba(255, 255, 255, 0.4);
+      border-color: white;
+    }
+    
+    .timer-preset-btn:active {
+      transform: scale(0.95);
+    }
+    
+    .timer-controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    
+    .timer-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+    }
+    
+    .timer-btn:active {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .notes-section {
+      margin-top: 15px;
+    }
+    
+    .notes-textarea {
+      width: 100%;
+      background: var(--secondary);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--text);
+      font-family: 'Roboto Condensed', sans-serif;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 60px;
+    }
+    
+    .notes-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .nav-buttons {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      background: var(--surface);
+      border-top: 2px solid var(--border);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    .nav-btn {
+      flex: 1;
+      padding: 20px;
+      background: var(--secondary);
+      border: none;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+      font-family: 'Roboto Condensed', sans-serif;
+    }
+    
+    .nav-btn:active {
+      background: var(--primary);
+    }
+    
+    .nav-btn.primary {
+      background: var(--primary);
+    }
+    
+    .nav-btn.primary:active {
+      background: var(--primary-dark);
+    }
+    
+    .nav-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 200;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    .modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 500px;
+      width: 100%;
+      border: 2px solid var(--border);
+    }
+    
+    .modal-title {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 24px;
+      color: var(--primary);
+      margin-bottom: 20px;
+      text-align: center;
+      letter-spacing: 2px;
+    }
+    
+    .modal-close {
+      background: var(--secondary);
+      border: 2px solid var(--border);
+      color: var(--text);
+      padding: 12px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      margin-top: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .modal-close:active {
+      background: var(--primary);
+    }
+    
+    .progress-item {
+      background: var(--secondary);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--primary);
+    }
+    
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    
+    .progress-date {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    
+    .progress-exercise {
+      font-weight: bold;
+      color: var(--primary);
+    }
+    
+    .progress-sets {
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+    
+    .alert-banner {
+      background: rgba(255, 170, 0, 0.2);
+      border: 2px solid var(--warning);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 15px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .alert-banner.success {
+      background: rgba(0, 255, 0, 0.2);
+      border-color: var(--success);
+    }
+    
+    .alert-banner.danger {
+      background: rgba(255, 0, 0, 0.2);
+      border-color: var(--danger);
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .timer-display.active {
+      animation: pulse 1s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Plate calculator function
+    function calculatePlates(totalWeight, barWeight) {
+      const perSide = (totalWeight - barWeight) / 2;
+      const plates = [];
+      let remaining = perSide;
+      
+      // Available plates: 55, 45, 35, 25, 10, 5, 2.5
+      const availablePlates = [55, 45, 35, 25, 10, 5, 2.5];
+      
+      for (const plate of availablePlates) {
+        const count = Math.floor(remaining / plate);
+        if (count > 0) {
+          plates.push(`${count}×${plate === Math.floor(plate) ? Math.floor(plate) : plate}`);
+          remaining -= count * plate;
+          remaining = Math.round(remaining * 10) / 10; // Round to 1 decimal
+        }
+      }
+      
+      if (remaining > 0.1) {
+        plates.push(`+${remaining.toFixed(1)}lb`);
+      }
+      
+      return plates.length > 0 ? plates.join(', ') : 'Empty bar';
+    }
+
+    // Program data - Week 28 Deload
+    const programData = {
+      week: 28,
+      cycle: "Mesocycle 2 - Deload",
+      nextWeek: "Week 29: Strength Test",
+      intensity: "90%",
+      restTime: {
+        primary: 180,    // 3 min for primary
+        accessory: 120   // 2 min for accessory
+      },
+      workouts: {
+        1: {
+          title: "Chest & Triceps",
+          exercises: [
+            { id: 1, name: "Bench Press", targetWeight: 267, barWeight: 45, plates: "2×45, 2×10", sets: 3, targetReps: 3, isPrimary: true },
+            { id: 2, name: "Close Grip Bench", targetWeight: 230, barWeight: 45, plates: "2×45, 1×10, 1×5", sets: 3, targetReps: 3, isPrimary: true },
+            { id: 3, name: "Machine Side Raise", targetWeight: 145, sets: 3, targetReps: 6, isPrimary: false },
+            { id: 4, name: "Tricep Rope Pulldown", targetWeight: 87.5, sets: 3, targetReps: 6, isPrimary: false }
+          ]
+        },
+        2: {
+          title: "Back & Calves",
+          exercises: [
+            { id: 5, name: "Deadlift", targetWeight: 307, barWeight: 50, plates: "1×55, 2×45, 1×5, 1×2.5", sets: 3, targetReps: 3, isPrimary: true },
+            { id: 6, name: "Pull Ups", targetWeight: "BW", sets: 3, targetReps: 5, isPrimary: false },
+            { id: 7, name: "One Arm DB Row", targetWeight: 110, sets: 3, targetReps: 6, isPrimary: false },
+            { id: 8, name: "Seated Calf Raise", targetWeight: 190, sets: 3, targetReps: 6, isPrimary: false }
+          ]
+        },
+        3: {
+          title: "Shoulders & Biceps",
+          exercises: [
+            { id: 9, name: "Military Press", targetWeight: 174, barWeight: 45, plates: "1×55, 1×10, 1×5", sets: 3, targetReps: 3, isPrimary: true },
+            { id: 10, name: "Rear Delt Fly", targetWeight: 145, sets: 3, targetReps: 3, isPrimary: false },
+            { id: 11, name: "DB Curls", targetWeight: 55, sets: 3, targetReps: 6, isPrimary: false },
+            { id: 12, name: "Machine Side Raise", targetWeight: 145, sets: 3, targetReps: 6, isPrimary: false }
+          ]
+        },
+        4: {
+          title: "Legs",
+          exercises: [
+            { id: 13, name: "Barbell Squat", targetWeight: 165, barWeight: 45, plates: "1×55, 1×5", sets: 3, targetReps: 3, isPrimary: true },
+            { id: 14, name: "Leg Press", targetWeight: 425, barWeight: 0, plates: "1×55, 3×45, 1×10, 1×2.5 per side", sets: 3, targetReps: 3, isPrimary: true },
+            { id: 15, name: "Leg Curl Lying", targetWeight: 135, sets: 3, targetReps: 6, isPrimary: false },
+            { id: 16, name: "Standing Calf Raise", targetWeight: 380, sets: 3, targetReps: 6, isPrimary: false }
+          ]
+        },
+        5: {
+          title: "Chest & Back",
+          exercises: [
+            { id: 17, name: "Incline Bench", targetWeight: 227, barWeight: 45, plates: "2×45, 1×10, 1×2.5", sets: 3, targetReps: 3, isPrimary: true },
+            { id: 18, name: "Flat Bench", targetWeight: 267, barWeight: 45, plates: "2×45, 2×10", sets: 3, targetReps: 3, isPrimary: true },
+            { id: 19, name: "Seated Cable Row", targetWeight: 185, sets: 3, targetReps: 6, isPrimary: false },
+            { id: 20, name: "Barbell Curl", targetWeight: 100, sets: 3, targetReps: 6, isPrimary: false }
+          ]
+        }
+      }
+    };
+
+    // Week 29 - Strength Test
+    const week29Data = {
+      week: 29,
+      cycle: "Strength Test Week",
+      nextWeek: "Week 30: Mesocycle 3 Start",
+      intensity: "95% AMRAP",
+      restTime: {
+        primary: 300,    // 5 min for max effort
+        accessory: 120
+      },
+      workouts: {
+        1: {
+          title: "Chest Test",
+          exercises: [
+            { id: 1, name: "Bench Press", currentRM: 297, targetWeight: 282, barWeight: 45, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true },
+            { id: 2, name: "Close Grip Bench", currentRM: 255, targetWeight: 242, barWeight: 45, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true }
+          ]
+        },
+        2: {
+          title: "Back Test",
+          exercises: [
+            { id: 3, name: "Deadlift", currentRM: 341, targetWeight: 324, barWeight: 50, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true }
+          ]
+        },
+        3: {
+          title: "Shoulders Test",
+          exercises: [
+            { id: 4, name: "Military Press", currentRM: 193, targetWeight: 183, barWeight: 45, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true }
+          ]
+        },
+        4: {
+          title: "Legs Test",
+          exercises: [
+            { id: 5, name: "Barbell Squat", currentRM: 183, targetWeight: 174, barWeight: 45, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true },
+            { id: 6, name: "Leg Press", currentRM: 472, targetWeight: 448, barWeight: 0, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true }
+          ]
+        },
+        5: {
+          title: "Chest Test 2",
+          exercises: [
+            { id: 7, name: "Incline Bench", currentRM: 252, targetWeight: 239, barWeight: 45, sets: 2, targetReps: "AMRAP", isPrimary: true, isTest: true }
+          ]
+        }
+      }
+    };
+
+    function App() {
+      const [selectedWeek, setSelectedWeek] = useState(28);
+      const [selectedDay, setSelectedDay] = useState(null);
+      const [currentExercise, setCurrentExercise] = useState(0);
+      const [workoutState, setWorkoutState] = useState(() => {
+        const saved = localStorage.getItem('currentWorkoutState');
+        return saved ? JSON.parse(saved) : null;
+      });
+      const [timerActive, setTimerActive] = useState(false);
+      const [timeRemaining, setTimeRemaining] = useState(180);
+      const [timerPreset, setTimerPreset] = useState(3);
+      const [workoutComplete, setWorkoutComplete] = useState(false);
+      const [showProgress, setShowProgress] = useState(false);
+      const [showDashboard, setShowDashboard] = useState(false);
+      const [showWeekSelector, setShowWeekSelector] = useState(false);
+      const [workoutHistory, setWorkoutHistory] = useState(() => {
+        const saved = localStorage.getItem('workoutHistory');
+        return saved ? JSON.parse(saved) : [];
+      });
+
+      const currentProgramData = selectedWeek === 29 ? week29Data : programData;
+
+      // Export to CSV function
+      const exportToCSV = () => {
+        if (workoutHistory.length === 0) {
+          alert('No workout data to export');
+          return;
+        }
+
+        let csv = 'Date,Week,Day,Exercise,Weight,Set 1,Set 2,Set 3,Set 4,Notes\n';
+        
+        workoutHistory.forEach(workout => {
+          const date = new Date(workout.date).toLocaleDateString();
+          workout.exercises.forEach(exercise => {
+            const sets = exercise.sets.map(s => s || '').join(',');
+            csv += `${date},${selectedWeek},${workout.day},"${exercise.name}",${exercise.currentWeight},${sets},"${exercise.notes || ''}"\n`;
+          });
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bbls-workout-history-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      };
+
+      // Save workout state
+      useEffect(() => {
+        if (workoutState) {
+          localStorage.setItem('currentWorkoutState', JSON.stringify(workoutState));
+        }
+      }, [workoutState]);
+
+      // Save history
+      useEffect(() => {
+        localStorage.setItem('workoutHistory', JSON.stringify(workoutHistory));
+      }, [workoutHistory]);
+
+      // Timer logic
+      useEffect(() => {
+        let interval;
+        if (timerActive && timeRemaining > 0) {
+          interval = setInterval(() => {
+            setTimeRemaining(prev => {
+              if (prev <= 1) {
+                setTimerActive(false);
+                if (navigator.vibrate) {
+                  navigator.vibrate([200, 100, 200, 100, 200]);
+                }
+                return timerPreset * 60;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        }
+        return () => clearInterval(interval);
+      }, [timerActive, timeRemaining, timerPreset]);
+
+      const startWorkout = (dayNumber) => {
+        const workout = currentProgramData.workouts[dayNumber];
+        setSelectedDay(dayNumber);
+        setCurrentExercise(0);
+        setWorkoutState({
+          week: selectedWeek,
+          day: dayNumber,
+          title: workout.title,
+          date: new Date().toISOString(),
+          exercises: workout.exercises.map(ex => ({
+            ...ex,
+            currentWeight: ex.targetWeight,
+            sets: Array(ex.sets).fill(null),
+            notes: '',
+            completed: false
+          }))
+        });
+        setWorkoutComplete(false);
+      };
+
+      const updateSet = (setIndex, value) => {
+        const newState = { ...workoutState };
+        const exercise = newState.exercises[currentExercise];
+        exercise.sets[setIndex] = value ? parseInt(value) : null;
+        
+        // Check if we should suggest weight adjustment
+        const targetMin = typeof exercise.targetReps === 'number' ? exercise.targetReps : parseInt(exercise.targetReps.split('-')[0]);
+        const failedSets = exercise.sets.filter((reps, idx) => idx < 3 && reps !== null && reps < targetMin).length;
+        
+        if (failedSets >= 3 && exercise.isPrimary) {
+          exercise.suggestion = "DECREASE";
+        } else if (exercise.sets.filter(r => r !== null && r >= targetMin).length === exercise.sets.length) {
+          if (!exercise.isPrimary) {
+            exercise.suggestion = "INCREASE";
+          }
+        }
+        
+        setWorkoutState(newState);
+        
+        // Auto-start timer
+        if (value && setIndex < exercise.sets.length - 1) {
+          const restTime = exercise.isPrimary ? programData.restTime.primary : programData.restTime.accessory;
+          setTimerPreset(restTime / 60);
+          setTimeRemaining(restTime);
+          setTimerActive(true);
+        }
+      };
+
+      const adjustWeight = (amount) => {
+        const newState = { ...workoutState };
+        const exercise = newState.exercises[currentExercise];
+        exercise.currentWeight = Math.max(0, exercise.currentWeight + amount);
+        setWorkoutState(newState);
+      };
+
+      const toggleComplete = () => {
+        const newState = { ...workoutState };
+        newState.exercises[currentExercise].completed = !newState.exercises[currentExercise].completed;
+        setWorkoutState(newState);
+      };
+
+      const updateNotes = (notes) => {
+        const newState = { ...workoutState };
+        newState.exercises[currentExercise].notes = notes;
+        setWorkoutState(newState);
+      };
+
+      const goNext = () => {
+        if (currentExercise < workoutState.exercises.length - 1) {
+          setCurrentExercise(prev => prev + 1);
+          setTimerActive(false);
+        } else {
+          finishWorkout();
+        }
+      };
+
+      const goPrev = () => {
+        if (currentExercise > 0) {
+          setCurrentExercise(prev => prev - 1);
+          setTimerActive(false);
+        }
+      };
+
+      const finishWorkout = () => {
+        const history = [...workoutHistory, workoutState];
+        setWorkoutHistory(history);
+        setWorkoutComplete(true);
+        localStorage.removeItem('currentWorkoutState');
+      };
+
+      const resetWorkout = () => {
+        setWorkoutState(null);
+        setSelectedDay(null);
+        setCurrentExercise(0);
+        setWorkoutComplete(false);
+        setTimerActive(false);
+        localStorage.removeItem('currentWorkoutState');
+      };
+
+      const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+      };
+
+      const setTimerPresetTime = (minutes) => {
+        setTimerPreset(minutes);
+        setTimeRemaining(minutes * 60);
+        setTimerActive(false);
+      };
+
+      // Day Selection Screen
+      if (!workoutState || workoutComplete) {
+        return (
+          <div>
+            <div className="header">
+              <div className="header-title">BBLS Tracker Pro</div>
+              <div className="header-subtitle">{programData.cycle}</div>
+            </div>
+
+            <div className="status-bar">
+              <div className="status-item" onClick={() => setShowWeekSelector(true)}>
+                <div className="status-label">Week</div>
+                <div className="status-value">{selectedWeek}</div>
+              </div>
+              <div className="status-item" onClick={() => setShowDashboard(true)}>
+                <div className="status-label">Cycle</div>
+                <div className="status-value">{currentProgramData.intensity}</div>
+              </div>
+              <div className="status-item" onClick={() => setShowProgress(true)}>
+                <div className="status-label">History</div>
+                <div className="status-value">{workoutHistory.length}</div>
+              </div>
+            </div>
+
+            {workoutComplete && (
+              <div className="container">
+                <div className="workout-card">
+                  <div className="modal-title">💪 Workout Complete!</div>
+                  <div style={{textAlign: 'center', marginBottom: '20px'}}>
+                    <div style={{fontSize: '18px', color: 'var(--primary)', marginBottom: '10px'}}>
+                      {workoutState.title}
+                    </div>
+                    <div style={{fontSize: '14px', color: 'var(--text-dim)'}}>
+                      {new Date(workoutState.date).toLocaleDateString()}
+                    </div>
+                  </div>
+                  
+                  {workoutState.exercises.map((ex, idx) => (
+                    <div key={idx} className="progress-item">
+                      <div className="progress-exercise">{ex.name}</div>
+                      <div className="progress-sets">
+                        Sets: {ex.sets.map((s, i) => 
+                          <span key={i} style={{marginRight: '8px', color: s ? 'var(--success)' : 'var(--text-dim)'}}>
+                            {s || '-'}
+                          </span>
+                        )}
+                      </div>
+                      {ex.suggestion && (
+                        <div style={{marginTop: '8px', fontSize: '12px', color: ex.suggestion === 'INCREASE' ? 'var(--success)' : 'var(--warning)'}}>
+                          💡 Next week: {ex.suggestion === 'INCREASE' ? '+10 lbs' : '-10 lbs'}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  <button className="modal-close" onClick={resetWorkout}>
+                    Back to Workouts
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!workoutComplete && (
+              <div className="container">
+                <div className="workout-card">
+                  <div className="modal-title">Select Today's Workout</div>
+                  <div style={{marginBottom: '15px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '14px'}}>
+                    {selectedWeek === 29 ? '⚠️ AMRAP Test - Go to failure on Set 1!' : currentProgramData.cycle}
+                  </div>
+                  {Object.entries(currentProgramData.workouts).map(([day, workout]) => (
+                    <button
+                      key={day}
+                      className="modal-close"
+                      style={{marginBottom: '10px', background: 'var(--primary)'}}
+                      onClick={() => startWorkout(parseInt(day))}
+                    >
+                      Day {day}: {workout.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Week Selector Modal */}
+            <div className={`modal ${showWeekSelector ? 'active' : ''}`}>
+              <div className="modal-content">
+                <div className="modal-title">Select Week</div>
+                <button 
+                  className="modal-close" 
+                  style={{marginBottom: '10px', background: selectedWeek === 28 ? 'var(--primary)' : 'var(--secondary)'}}
+                  onClick={() => { setSelectedWeek(28); setShowWeekSelector(false); }}
+                >
+                  Week 28 - Deload (90%, 3 reps)
+                </button>
+                <button 
+                  className="modal-close" 
+                  style={{marginBottom: '10px', background: selectedWeek === 29 ? 'var(--primary)' : 'var(--secondary)'}}
+                  onClick={() => { setSelectedWeek(29); setShowWeekSelector(false); }}
+                >
+                  Week 29 - Strength Test (95% AMRAP)
+                </button>
+                <button className="modal-close" onClick={() => setShowWeekSelector(false)}>Cancel</button>
+              </div>
+            </div>
+
+            {/* Dashboard Modal */}
+            <div className={`modal ${showDashboard ? 'active' : ''}`}>
+              <div className="modal-content">
+                <div className="modal-title">Program Dashboard</div>
+                <div className="progress-item">
+                  <div className="progress-header">
+                    <span>Current Week</span>
+                    <span className="progress-exercise">Week {selectedWeek}</span>
+                  </div>
+                  <div className="progress-sets">{currentProgramData.cycle}</div>
+                </div>
+                <div className="progress-item">
+                  <div className="progress-header">
+                    <span>Intensity</span>
+                    <span className="progress-exercise">{currentProgramData.intensity}</span>
+                  </div>
+                  <div className="progress-sets">
+                    {selectedWeek === 28 ? '3 reps, 2-3 sets (Deload)' : '95% weight, AMRAP reps (Test)'}
+                  </div>
+                </div>
+                <div className="progress-item">
+                  <div className="progress-header">
+                    <span>Next Week</span>
+                    <span className="progress-exercise">{currentProgramData.nextWeek}</span>
+                  </div>
+                  <div className="progress-sets">
+                    {selectedWeek === 28 ? 'AMRAP testing to establish new 1RMs' : 'Start Mesocycle 3 with new 1RMs'}
+                  </div>
+                </div>
+                <div className="progress-item">
+                  <div className="progress-header">
+                    <span>Workouts This Week</span>
+                    <span className="progress-exercise">{workoutHistory.filter(w => w.week === selectedWeek).length}</span>
+                  </div>
+                </div>
+                <button className="modal-close" onClick={() => setShowDashboard(false)}>Close</button>
+              </div>
+            </div>
+
+            {/* Progress Modal */}
+            <div className={`modal ${showProgress ? 'active' : ''}`}>
+              <div className="modal-content">
+                <div className="modal-title">Workout History</div>
+                {workoutHistory.length === 0 ? (
+                  <div style={{textAlign: 'center', padding: '20px', color: 'var(--text-dim)'}}>
+                    No workouts logged yet
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{maxHeight: '400px', overflowY: 'auto'}}>
+                      {workoutHistory.slice().reverse().map((workout, idx) => (
+                        <div key={idx} className="progress-item">
+                          <div className="progress-header">
+                            <span className="progress-exercise">Week {workout.week} Day {workout.day}: {workout.title}</span>
+                            <span className="progress-date">{new Date(workout.date).toLocaleDateString()}</span>
+                          </div>
+                          <div className="progress-sets">
+                            {workout.exercises.length} exercises • {workout.exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s).length, 0)} sets
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button 
+                      className="modal-close" 
+                      style={{marginTop: '10px', background: 'var(--primary)'}}
+                      onClick={exportToCSV}
+                    >
+                      📊 Export to Spreadsheet (CSV)
+                    </button>
+                  </div>
+                )}
+                <button className="modal-close" onClick={() => setShowProgress(false)}>Close</button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Active Workout Screen
+      const exercise = workoutState.exercises[currentExercise];
+      const targetMin = typeof exercise.targetReps === 'number' ? exercise.targetReps : parseInt(exercise.targetReps.split('-')[0]);
+      const failedSets = exercise.sets.filter((reps, idx) => idx < 3 && reps !== null && reps < targetMin).length;
+
+      return (
+        <div>
+          <div className="header">
+            <div className="header-title">Week {workoutState.week} Day {selectedDay}: {workoutState.title}</div>
+            <div className="header-subtitle">{currentProgramData.cycle}</div>
+          </div>
+
+          <div className="status-bar">
+            <div className="status-item">
+              <div className="status-label">Exercise</div>
+              <div className="status-value">{currentExercise + 1}/{workoutState.exercises.length}</div>
+            </div>
+            <div className="status-item">
+              <div className="status-label">Completed</div>
+              <div className="status-value">{workoutState.exercises.filter(e => e.completed).length}/{workoutState.exercises.length}</div>
+            </div>
+            <div className="status-item">
+              <div className="status-label">Sets</div>
+              <div className="status-value">{exercise.sets.filter(s => s !== null).length}/{exercise.sets.length}</div>
+            </div>
+          </div>
+
+          <div className="container">
+            <div className="workout-card">
+              <div className="exercise-header">
+                <div className="exercise-name">{exercise.name}</div>
+                <div 
+                  className={`exercise-complete ${exercise.completed ? 'checked' : ''}`}
+                  onClick={toggleComplete}
+                />
+              </div>
+
+              {failedSets >= 3 && exercise.isPrimary && !exercise.isTest && (
+                <div className="alert-banner danger">
+                  ⚠️ Missed target on 3+ sets. Consider decreasing weight by 10 lbs next week.
+                </div>
+              )}
+
+              {exercise.suggestion === 'INCREASE' && (
+                <div className="alert-banner success">
+                  💪 Hit all target reps! Increase weight by 10 lbs next week.
+                </div>
+              )}
+
+              {exercise.isTest && exercise.sets[0] !== null && (
+                <div className="alert-banner success">
+                  🎯 New 1RM: <strong>{Math.round(exercise.currentWeight / (1.0278 - 0.0278 * exercise.sets[0]))} lbs</strong>
+                  <div style={{fontSize: '11px', marginTop: '5px', opacity: 0.8}}>
+                    Based on {exercise.sets[0]} reps at {exercise.currentWeight} lbs
+                  </div>
+                </div>
+              )}
+
+              <div className="weight-display">
+                <div className="weight-label">Working Weight</div>
+                <div className="weight-value">{exercise.currentWeight} {typeof exercise.currentWeight === 'number' ? 'LBS' : ''}</div>
+                
+                {typeof exercise.currentWeight === 'number' && (
+                  <div className="weight-adjust">
+                    <button className="weight-btn" onClick={() => adjustWeight(-10)}>-10 lbs</button>
+                    <button className="weight-btn" onClick={() => adjustWeight(-5)}>-5 lbs</button>
+                    <button className="weight-btn" onClick={() => adjustWeight(5)}>+5 lbs</button>
+                    <button className="weight-btn" onClick={() => adjustWeight(10)}>+10 lbs</button>
+                  </div>
+                )}
+                
+                {exercise.barWeight && typeof exercise.currentWeight === 'number' && (
+                  <div className="plates-info">
+                    <div className="plates-label">Load Per Side:</div>
+                    <div className="plates-value">{calculatePlates(exercise.currentWeight, exercise.barWeight)}</div>
+                  </div>
+                )}
+              </div>
+
+              <div className="weight-label" style={{marginBottom: '10px'}}>
+                Log Your Sets ({exercise.targetReps} reps target)
+              </div>
+              <div className="sets-grid">
+                {exercise.sets.map((reps, idx) => {
+                  const isFailed = reps !== null && reps < targetMin;
+                  const isCompleted = reps !== null && reps >= targetMin;
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`set-box ${isCompleted ? 'completed' : ''} ${isFailed ? 'failed' : ''}`}
+                    >
+                      <div className="set-label">Set {idx + 1}</div>
+                      <input 
+                        type="number"
+                        className="set-input"
+                        value={reps || ''}
+                        onChange={(e) => updateSet(idx, e.target.value)}
+                        placeholder="-"
+                        inputMode="numeric"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="rest-timer">
+                <div className={`timer-display ${timerActive ? 'active' : ''}`}>
+                  {formatTime(timeRemaining)}
+                </div>
+                <div className="timer-presets">
+                  <button 
+                    className={`timer-preset-btn ${timerPreset === 2 ? 'active' : ''}`}
+                    onClick={() => setTimerPresetTime(2)}
+                  >
+                    2 MIN
+                  </button>
+                  <button 
+                    className={`timer-preset-btn ${timerPreset === 3 ? 'active' : ''}`}
+                    onClick={() => setTimerPresetTime(3)}
+                  >
+                    3 MIN
+                  </button>
+                  <button 
+                    className={`timer-preset-btn ${timerPreset === 5 ? 'active' : ''}`}
+                    onClick={() => setTimerPresetTime(5)}
+                  >
+                    5 MIN
+                  </button>
+                </div>
+                <div className="timer-controls">
+                  <button 
+                    className="timer-btn"
+                    onClick={() => setTimerActive(!timerActive)}
+                  >
+                    {timerActive ? 'Pause' : 'Start'}
+                  </button>
+                  <button 
+                    className="timer-btn"
+                    onClick={() => {
+                      setTimeRemaining(timerPreset * 60);
+                      setTimerActive(false);
+                    }}
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              <div className="notes-section">
+                <div className="weight-label" style={{marginBottom: '8px'}}>Notes</div>
+                <textarea 
+                  className="notes-textarea"
+                  placeholder="Weight adjustments, form notes, etc..."
+                  value={exercise.notes}
+                  onChange={(e) => updateNotes(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="nav-buttons">
+            <button 
+              className="nav-btn"
+              onClick={goPrev}
+              disabled={currentExercise === 0}
+            >
+              ← Previous
+            </button>
+            <button 
+              className="nav-btn primary"
+              onClick={goNext}
+            >
+              {currentExercise === workoutState.exercises.length - 1 ? 'Finish' : 'Next →'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
