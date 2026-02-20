@@ -80,6 +80,7 @@
     .tcard { background:linear-gradient(135deg,var(--red2),var(--red)); border-radius:10px; padding:18px; text-align:center; margin-bottom:14px; }
     .tdisp { font-size:54px; font-family:'Bebas Neue',cursive; letter-spacing:3px; margin-bottom:10px; }
     .tdisp.tick { animation:pulse 1s ease-in-out infinite; }
+    .tdisp.neg { color:#ffaa00; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
     .tpre { display:flex; gap:8px; justify-content:center; margin-bottom:10px; }
     .tpb { background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.3); color:#fff; padding:8px 18px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:12px; letter-spacing:1px; transition:all .2s; }
@@ -174,36 +175,37 @@ const WEEKS = {
     intensity:"90%", note:"3 reps · 2-3 sets",
     next:"Week 29: Strength Test (AMRAP)",
     rP:180, rA:120,
+    isDeload:true,
     days:{
       1:{title:"Chest & Triceps", ex:[
         {id:1,name:"Bench Press",       w:267,bar:45,sets:3,reps:3,prim:true},
         {id:2,name:"Close Grip Bench",  w:230,bar:45,sets:3,reps:3,prim:true},
-        {id:3,name:"Machine Side Raise",w:145,       sets:3,reps:6,prim:false},
-        {id:4,name:"Tricep Rope PD",    w:87.5,      sets:3,reps:6,prim:false},
+        {id:3,name:"Machine Side Raise",w:145,       sets:3,reps:3,prim:false},
+        {id:4,name:"Tricep Rope PD",    w:87.5,      sets:3,reps:3,prim:false},
       ]},
       2:{title:"Back & Calves", ex:[
         {id:5,name:"Deadlift",          w:307,bar:50,sets:3,reps:3,prim:true},
         {id:6,name:"Pull Ups",          w:"BW",      sets:3,reps:5,prim:false},
-        {id:7,name:"One Arm DB Row",    w:110,       sets:3,reps:6,prim:false},
-        {id:8,name:"Seated Calf Raise", w:190,       sets:3,reps:6,prim:false},
+        {id:7,name:"One Arm DB Row",    w:110,       sets:3,reps:3,prim:false},
+        {id:8,name:"Seated Calf Raise", w:190,       sets:3,reps:3,prim:false},
       ]},
       3:{title:"Shoulders & Biceps", ex:[
         {id:9, name:"Military Press",   w:174,bar:45,sets:3,reps:3,prim:true},
-        {id:10,name:"Rear Delt Fly",    w:145,       sets:3,reps:6,prim:false},
-        {id:11,name:"DB Curls",         w:55,        sets:3,reps:6,prim:false},
-        {id:12,name:"Machine Side Raise",w:145,      sets:3,reps:6,prim:false},
+        {id:10,name:"Rear Delt Fly",    w:194,bar:0, sets:3,reps:3,prim:true},
+        {id:11,name:"DB Curls",         w:55,        sets:3,reps:3,prim:false},
+        {id:12,name:"Machine Side Raise",w:145,      sets:3,reps:3,prim:false},
       ]},
       4:{title:"Legs", ex:[
         {id:13,name:"Barbell Squat",    w:165,bar:45,sets:3,reps:3,prim:true},
         {id:14,name:"Leg Press",        w:425,bar:0, sets:3,reps:3,prim:true},
-        {id:15,name:"Leg Curl Lying",   w:135,       sets:3,reps:6,prim:false},
-        {id:16,name:"Standing Calf Raise",w:380,     sets:3,reps:6,prim:false},
+        {id:15,name:"Leg Curl Lying",   w:135,       sets:3,reps:3,prim:false},
+        {id:16,name:"Standing Calf Raise",w:380,     sets:3,reps:3,prim:false},
       ]},
       5:{title:"Chest & Back", ex:[
         {id:17,name:"Incline Bench",    w:227,bar:45,sets:3,reps:3,prim:true},
         {id:18,name:"Flat Bench",       w:267,bar:45,sets:3,reps:3,prim:true},
-        {id:19,name:"Seated Cable Row", w:185,       sets:3,reps:6,prim:false},
-        {id:20,name:"Barbell Curl",     w:100,       sets:3,reps:6,prim:false},
+        {id:19,name:"Seated Cable Row", w:185,       sets:3,reps:3,prim:false},
+        {id:20,name:"Barbell Curl",     w:100,       sets:3,reps:3,prim:false},
       ]},
     }
   },
@@ -212,6 +214,7 @@ const WEEKS = {
     intensity:"95% AMRAP", note:"Go to failure · 2 sets",
     next:"Week 30: Mesocycle 3 (70%)",
     rP:300, rA:120,
+    isTest:true,
     days:{
       1:{title:"Chest Test", ex:[
         {id:1,name:"Bench Press",      w:282,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:297},
@@ -302,15 +305,16 @@ function App() {
   useEffect(()=>{
     if(!ticking) return;
     const id=setInterval(()=>{
-      setTimer(t=>{
-        if(t<=1){ setTicking(false); if(navigator.vibrate)navigator.vibrate([200,100,200,100,200]); return preset*60; }
-        return t-1;
-      });
+      setTimer(t=>t-1);
     },1000);
     return ()=>clearInterval(id);
-  },[ticking,preset]);
+  },[ticking]);
 
-  const fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  const fmt=s=>{
+    const neg=s<0;
+    const abs=Math.abs(s);
+    return `${neg?'-':''}${Math.floor(abs/60)}:${String(abs%60).padStart(2,'0')}`;
+  };
   const setPre=m=>{setPreset(m);setTimer(m*60);setTicking(false);};
 
   const startDay=day=>{
@@ -327,11 +331,16 @@ function App() {
   const updSet=(si,val)=>{
     const w={...workout}; const e=w.ex[ei];
     e.sets[si]=val!==''?parseInt(val):null;
-    const tgt=typeof e.reps==='number'?e.reps:6;
-    const filled=e.sets.filter(s=>s!==null);
-    const fails=filled.filter(s=>s<tgt).length;
-    if(!e.prim) e.sugg=filled.length===e.sets.length&&fails===0?'up':null;
-    else e.sugg=fails>=3?'down':null;
+    
+    // Only show progression during normal weeks (not deload or test weeks)
+    if (!wd.isDeload && !wd.isTest) {
+      const tgt=typeof e.reps==='number'?e.reps:6;
+      const filled=e.sets.filter(s=>s!==null);
+      const fails=filled.filter(s=>s<tgt).length;
+      if(!e.prim) e.sugg=filled.length===e.sets.length&&fails===0?'up':null;
+      else e.sugg=fails>=3?'down':null;
+    }
+    
     setWorkout(w);
     if(val!==''&&si<e.sets.length-1){
       const rest=e.prim?wd.rP:wd.rA;
@@ -352,7 +361,7 @@ function App() {
     let csv='Date,Week,Day,Exercise,Weight,Set1,Set2,Set3,Set4,Notes\n';
     history.forEach(w=>{
       const d=new Date(w.date).toLocaleDateString();
-      w.ex.forEach(e=>{csv+=`${d},${w.week},${w.day},"${e.name}",${e.cw},${e.sets.map(s=>s??'').join(',')},"${e.notes||''}"\n`;});
+      w.ex.forEach(e=>{csv+=`${d},${w.week},${w.day},"${e.name}",${e.cw},${e.sets.map(s=>s??'').join(',')  },"${e.notes||''}"\n`;});
     });
     const a=Object.assign(document.createElement('a'),{
       href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),
@@ -422,8 +431,12 @@ function App() {
               return(
                 <button key={d} className="daybtn" onClick={()=>startDay(parseInt(d))}>
                   <div>
-                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:1}}>Day {d}: {data.title}</div>
-                    <div style={{fontSize:11,color:'var(--dim)',marginTop:2}}>{data.ex.length} exercises · {wd.note}</div>
+                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:1}}>
+                      Day {d}: {data.title}
+                    </div>
+                    <div style={{fontSize:11,color:'var(--dim)',marginTop:2}}>
+                      {data.ex.length} exercises · {wd.note}
+                    </div>
                   </div>
                   {done&&<span className="donetag">✓ Done</span>}
                 </button>
@@ -528,8 +541,8 @@ function App() {
           </div>
 
           {ex.test&&ex.sets[0]!=null&&<div className="alrt ok">🎯 Est. New 1RM: <strong>{calcRM(ex.cw,ex.sets[0])} lbs</strong><div style={{fontSize:11,marginTop:4,opacity:.8}}>{ex.sets[0]} reps @ {ex.cw} lbs</div></div>}
-          {!ex.test&&fails>=3&&ex.prim&&<div className="alrt ng">⚠️ Missed target 3+ sets — consider -10 lbs next week</div>}
-          {ex.sugg==='up'&&<div className="alrt ok">💪 All sets hit! Next week +10 lbs</div>}
+          {!ex.test&&!wd.isDeload&&fails>=3&&ex.prim&&<div className="alrt ng">⚠️ Missed target 3+ sets — consider -10 lbs next week</div>}
+          {!wd.isDeload&&ex.sugg==='up'&&<div className="alrt ok">💪 All sets hit! Next week +10 lbs</div>}
 
           <div className="wbox">
             <div className="wlbl">Working Weight</div>
@@ -566,7 +579,7 @@ function App() {
           </div>
 
           <div className="tcard">
-            <div className={`tdisp${ticking?' tick':''}`}>{fmt(timer)}</div>
+            <div className={`tdisp${ticking?' tick':''}${timer<0?' neg':''}`}>{fmt(timer)}</div>
             <div className="tpre">
               {[2,3,5].map(m=><button key={m} className={`tpb${preset===m?' on':''}`} onClick={()=>setPre(m)}>{m} MIN</button>)}
             </div>
