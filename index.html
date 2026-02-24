@@ -202,6 +202,75 @@ function calcRM(w, r) { return r > 0 ? Math.round(w * (1 + 0.0333 * r)) : null; 
 
 function roundTo5(n) { return Math.round(n / 5) * 5; }
 
+// ── 16-Week Macrocycle Pattern ─────────────────────────────────
+const CYCLE_PATTERN = [
+  // Meso 1
+  { pct:0.70, reps:10, sets:4, accReps:12, accSets:3, deload:false, test:false, meso:1, label:"Meso 1 Wk 1", rest:180 },
+  { pct:0.75, reps:8,  sets:4, accReps:12, accSets:3, deload:false, test:false, meso:1, label:"Meso 1 Wk 2", rest:180 },
+  { pct:0.80, reps:6,  sets:4, accReps:12, accSets:3, deload:false, test:false, meso:1, label:"Meso 1 Wk 3", rest:180 },
+  { pct:0.80, reps:3,  sets:3, accReps:6,  accSets:2, deload:true,  test:false, meso:1, label:"Meso 1 Deload", rest:180 },
+  // Meso 2
+  { pct:0.75, reps:8,  sets:4, accReps:10, accSets:3, deload:false, test:false, meso:2, label:"Meso 2 Wk 1", rest:180 },
+  { pct:0.80, reps:6,  sets:4, accReps:10, accSets:3, deload:false, test:false, meso:2, label:"Meso 2 Wk 2", rest:180 },
+  { pct:0.85, reps:4,  sets:4, accReps:10, accSets:3, deload:false, test:false, meso:2, label:"Meso 2 Wk 3", rest:180 },
+  { pct:0.85, reps:3,  sets:3, accReps:5,  accSets:2, deload:true,  test:false, meso:2, label:"Meso 2 Deload", rest:180 },
+  // Meso 3
+  { pct:0.80, reps:6,  sets:4, accReps:10, accSets:3, deload:false, test:false, meso:3, label:"Meso 3 Wk 1", rest:180 },
+  { pct:0.85, reps:4,  sets:4, accReps:10, accSets:3, deload:false, test:false, meso:3, label:"Meso 3 Wk 2", rest:180 },
+  { pct:0.90, reps:2,  sets:4, accReps:10, accSets:3, deload:false, test:false, meso:3, label:"Meso 3 Wk 3", rest:180 },
+  { pct:0.90, reps:3,  sets:3, accReps:5,  accSets:2, deload:true,  test:false, meso:3, label:"Meso 3 Deload", rest:180 },
+  // Meso 4
+  { pct:0.85, reps:4,  sets:4, accReps:8,  accSets:3, deload:false, test:false, meso:4, label:"Meso 4 Wk 1", rest:180 },
+  { pct:0.90, reps:2,  sets:4, accReps:8,  accSets:3, deload:false, test:false, meso:4, label:"Meso 4 Wk 2", rest:180 },
+  // Strength Test
+  { pct:0.95, reps:"AMRAP", sets:2, accReps:8, accSets:2, deload:false, test:true,  meso:4, label:"Strength Test", rest:300 },
+  // Full Deload
+  { pct:0.50, reps:6,  sets:2, accReps:3,  accSets:2, deload:true,  test:false, meso:4, label:"Full Deload", rest:180 },
+];
+
+// Exercises that should NOT be AMRAP-tested (1RM carries forward)
+const NO_TEST = new Set(["Machine Rear Delt Fly", "Flat Bench"]);
+
+const DAY_TEMPLATES = [
+  { day:1, title:"Chest & Triceps", ex:[
+    { name:"Bench Press",        bar:45, prim:true },
+    { name:"Close Grip Bench",   bar:45, prim:true },
+    { name:"Machine Side Raise", bar:null, prim:false },
+    { name:"Tricep Rope PD",     bar:null, prim:false },
+  ]},
+  { day:2, title:"Back & Calves", ex:[
+    { name:"Deadlift",          bar:50, prim:true },
+    { name:"Pull Ups",          bar:null, prim:false, bw:true },
+    { name:"One Arm DB Row",    bar:null, prim:false },
+    { name:"Seated Calf Raise", bar:null, prim:false },
+  ]},
+  { day:3, title:"Shoulders & Biceps", ex:[
+    { name:"Military Press",        bar:45,  prim:true },
+    { name:"Machine Rear Delt Fly", bar:0,   prim:true },
+    { name:"DB Curls",              bar:null, prim:false },
+    { name:"Machine Side Raise",    bar:null, prim:false },
+  ]},
+  { day:4, title:"Legs", ex:[
+    { name:"Barbell Squat",       bar:45,  prim:true },
+    { name:"Leg Press",           bar:0,   prim:true },
+    { name:"Leg Curl Lying",      bar:null, prim:false },
+    { name:"Standing Calf Raise", bar:null, prim:false },
+  ]},
+  { day:5, title:"Chest & Back", ex:[
+    { name:"Incline Bench",    bar:45,  prim:true },
+    { name:"Flat Bench",       bar:45,  prim:true, rmKey:"Bench Press" },
+    { name:"Seated Cable Row", bar:null, prim:false },
+    { name:"Barbell Curl",     bar:null, prim:false },
+  ]},
+];
+
+const DEFAULT_ACC_WEIGHTS = {
+  "Machine Side Raise":145, "Tricep Rope PD":87.5, "Pull Ups":"BW",
+  "One Arm DB Row":110, "Seated Calf Raise":190, "DB Curls":55,
+  "Leg Curl Lying":135, "Standing Calf Raise":380, "Seated Cable Row":185,
+  "Barbell Curl":100,
+};
+
 // ── Motivational Quotes (item 11) ──────────────────────────────
 const QUOTES = [
   { text: "The iron never lies. You either lift it or you don't.", author: "Henry Rollins" },
@@ -410,53 +479,74 @@ const WEEKS = {
   }
 };
 
-// ── Week 30 Generation (item 8) ────────────────────────────────
-function generateWeek30(saved1RMs) {
-  const accWeights = {
-    "Machine Side Raise": 95, "Tricep Rope PD": 65, "Pull Ups": "BW",
-    "One Arm DB Row": 90, "Seated Calf Raise": 145, "DB Curls": 45,
-    "Leg Curl Lying": 110, "Standing Calf Raise": 310, "Seated Cable Row": 170,
-    "Barbell Curl": 90, "Machine Rear Delt Fly": 150,
-  };
-  const pWeight = name => roundTo5((saved1RMs[name] || 0) * 0.70);
-  return {
-    label:"Week 30 \u2014 Mesocycle 3 R1", cycle:"Mesocycle 3 \u00b7 Round 1",
-    intensity:"70%", note:"10 reps \u00b7 4 sets",
-    next:"Week 31: Round 2 (75%)",
-    rP:180, rA:120,
-    days:{
-      1:{title:"Chest & Triceps", ex:[
-        {id:1,name:"Bench Press",          w:pWeight("Bench Press"),bar:45,sets:4,reps:10,prim:true},
-        {id:2,name:"Close Grip Bench",     w:pWeight("Close Grip Bench"),bar:45,sets:4,reps:10,prim:true},
-        {id:3,name:"Machine Side Raise",   w:accWeights["Machine Side Raise"],sets:4,reps:12,prim:false},
-        {id:4,name:"Tricep Rope PD",       w:accWeights["Tricep Rope PD"],sets:4,reps:12,prim:false},
-      ]},
-      2:{title:"Back & Calves", ex:[
-        {id:5,name:"Deadlift",             w:pWeight("Deadlift"),bar:50,sets:4,reps:10,prim:true},
-        {id:6,name:"Pull Ups",             w:"BW",sets:4,reps:10,prim:false},
-        {id:7,name:"One Arm DB Row",       w:accWeights["One Arm DB Row"],sets:4,reps:12,prim:false},
-        {id:8,name:"Seated Calf Raise",    w:accWeights["Seated Calf Raise"],sets:4,reps:12,prim:false},
-      ]},
-      3:{title:"Shoulders & Biceps", ex:[
-        {id:9, name:"Military Press",      w:pWeight("Military Press"),bar:45,sets:4,reps:10,prim:true},
-        {id:10,name:"Machine Rear Delt Fly",w:pWeight("Machine Rear Delt Fly"),bar:0,sets:4,reps:10,prim:true},
-        {id:11,name:"DB Curls",            w:accWeights["DB Curls"],sets:4,reps:12,prim:false},
-        {id:12,name:"Machine Side Raise",  w:accWeights["Machine Side Raise"],sets:4,reps:12,prim:false},
-      ]},
-      4:{title:"Legs", ex:[
-        {id:13,name:"Barbell Squat",       w:pWeight("Barbell Squat"),bar:45,sets:4,reps:10,prim:true},
-        {id:14,name:"Leg Press",           w:pWeight("Leg Press"),bar:0,sets:4,reps:10,prim:true},
-        {id:15,name:"Leg Curl Lying",      w:accWeights["Leg Curl Lying"],sets:4,reps:12,prim:false},
-        {id:16,name:"Standing Calf Raise", w:accWeights["Standing Calf Raise"],sets:4,reps:12,prim:false},
-      ]},
-      5:{title:"Chest & Back", ex:[
-        {id:17,name:"Incline Bench",       w:pWeight("Incline Bench"),bar:45,sets:4,reps:10,prim:true},
-        {id:18,name:"Flat Bench",          w:pWeight("Bench Press"),bar:45,sets:4,reps:10,prim:true},
-        {id:19,name:"Seated Cable Row",    w:accWeights["Seated Cable Row"],sets:4,reps:12,prim:false},
-        {id:20,name:"Barbell Curl",        w:accWeights["Barbell Curl"],sets:4,reps:12,prim:false},
-      ]},
-    }
-  };
+// ── Cycle Generation ───────────────────────────────────────────
+function generateCycle(startWeek, oneRMs, accW) {
+  const cycleNum = Math.max(1, Math.ceil((startWeek - 14) / 16));
+  const weeks = {};
+  CYCLE_PATTERN.forEach((pat, idx) => {
+    const wn = startWeek + idx;
+    const pctLabel = pat.test ? "95% AMRAP" : `${Math.round(pat.pct*100)}%`;
+    let cycleLabel;
+    if (pat.test) cycleLabel = "Strength Test Week";
+    else if (pat.deload && pat.meso===4) cycleLabel = `Cycle ${cycleNum} \u00b7 Full Deload`;
+    else cycleLabel = `Cycle ${cycleNum} \u00b7 Meso ${pat.meso}${pat.deload?' Deload':''}`;
+    const noteStr = pat.test ? "Go to failure \u00b7 2 sets" : `${pat.reps} reps \u00b7 ${pat.sets} sets`;
+    const nextPat = CYCLE_PATTERN[idx+1];
+    const nextLabel = nextPat
+      ? `Week ${wn+1}: ${nextPat.label} (${Math.round(nextPat.pct*100)}%)`
+      : `Week ${wn+1}: Next Cycle begins`;
+
+    const days = {};
+    DAY_TEMPLATES.forEach((tmpl, di) => {
+      const dayNum = di + 1;
+      let dayTitle = tmpl.title;
+      if (pat.test) {
+        const base = tmpl.title.split("&")[0].trim();
+        dayTitle = base + " Test" + (dayNum===5?" 2":"");
+      }
+      const exercises = tmpl.ex.map((et, exi) => {
+        const rmKey = et.rmKey || et.name;
+        const ex = { id: di*10+exi+1, name: et.name };
+        if (et.prim) {
+          const oneRM = oneRMs[rmKey] || 0;
+          ex.w = roundTo5(oneRM * pat.pct);
+          if (et.bar !== null) ex.bar = et.bar;
+          ex.prim = true;
+          if (pat.test && !NO_TEST.has(et.name)) {
+            ex.sets = pat.sets;
+            ex.reps = "AMRAP";
+            ex.test = true;
+            ex.rm = oneRM;
+            if (et.rmKey) ex.rmKey = et.rmKey;
+          } else {
+            ex.sets = pat.sets;
+            ex.reps = pat.reps;
+          }
+        } else {
+          ex.w = et.bw ? "BW" : (accW[et.name] || 0);
+          ex.sets = pat.accSets;
+          ex.reps = pat.accReps;
+          ex.prim = false;
+        }
+        return ex;
+      });
+      days[dayNum] = { title: dayTitle, ex: exercises };
+    });
+
+    weeks[wn] = {
+      label: `Week ${wn} \u2014 ${pat.label}`,
+      cycle: cycleLabel,
+      intensity: pctLabel,
+      note: noteStr,
+      next: nextLabel,
+      rP: pat.rest,
+      rA: 120,
+      isDeload: pat.deload,
+      isTest: pat.test,
+      days: days,
+    };
+  });
+  return weeks;
 }
 
 // ── PIN Screen ─────────────────────────────────────────────────
@@ -507,7 +597,7 @@ function App() {
     const t=localStorage.getItem('lastActive');
     return t && (Date.now()-parseInt(t))<30*60*1000;
   });
-  const [week, setWeek] = useState(28);
+  const [week, setWeek] = useState(()=>parseInt(localStorage.getItem('currentWeek')||'28'));
   const [workout, setWorkout] = useState(null);
   const [ei, setEi] = useState(0);
   const [history, setHistory] = useState(()=>JSON.parse(localStorage.getItem('wh')||'[]'));
@@ -521,15 +611,17 @@ function App() {
   const [saved1RMs, setSaved1RMs] = useState(()=>JSON.parse(localStorage.getItem('saved1RMs')||'{}'));
   const [sheetsUrl, setSheetsUrl] = useState(()=>localStorage.getItem('sheetsUrl')||'');
   const [expandedWeeks, setExpandedWeeks] = useState({});
+  const [cycles, setCycles] = useState(()=>JSON.parse(localStorage.getItem('bblsCycles')||'[]'));
+  const [accWeights, setAccWeights] = useState(()=>JSON.parse(localStorage.getItem('accWeights')||JSON.stringify(DEFAULT_ACC_WEIGHTS)));
   const beeped = useRef(false);
   const wakeLock = useRef(null);
   const quoteRef = useRef(null);
 
-  // Load generated weeks into WEEKS
+  // Build all weeks: hardcoded 28-29 + generated cycles
   const allWeeks = { ...WEEKS };
-  if (Object.keys(saved1RMs).length >= 5) {
-    allWeeks[30] = generateWeek30(saved1RMs);
-  }
+  cycles.forEach(c => {
+    Object.assign(allWeeks, generateCycle(c.startWeek, c.oneRMs, c.accWeights));
+  });
   const wd = allWeeks[week];
   const doneDays = history.filter(h=>h.week===week).map(h=>h.day);
 
@@ -546,6 +638,9 @@ function App() {
   useEffect(()=>{if(unlocked)localStorage.setItem('lastActive',Date.now());},[unlocked]);
   useEffect(()=>{localStorage.setItem('saved1RMs',JSON.stringify(saved1RMs));},[saved1RMs]);
   useEffect(()=>{localStorage.setItem('sheetsUrl',sheetsUrl);},[sheetsUrl]);
+  useEffect(()=>{localStorage.setItem('bblsCycles',JSON.stringify(cycles));},[cycles]);
+  useEffect(()=>{localStorage.setItem('accWeights',JSON.stringify(accWeights));},[accWeights]);
+  useEffect(()=>{localStorage.setItem('currentWeek',week);},[week]);
 
   // Timer with negative support + beep (items 4, 10)
   useEffect(()=>{
@@ -624,7 +719,8 @@ function App() {
     if (e.test && si === 0 && val !== '' && parseInt(val) > 0) {
       const new1RM = calcRM(e.cw, parseInt(val));
       if (new1RM) {
-        const updated = { ...saved1RMs, [e.name]: new1RM };
+        const key = e.rmKey || e.name;
+        const updated = { ...saved1RMs, [key]: new1RM };
         setSaved1RMs(updated);
       }
     }
@@ -636,7 +732,7 @@ function App() {
     }
   };
 
-  const adjW=d=>{const w={...workout};const e=w.ex[ei];if(typeof e.cw==='number')e.cw=Math.max(0,e.cw+d);setWorkout(w);};
+  const adjW=d=>{const w={...workout};const e=w.ex[ei];if(typeof e.cw==='number'){e.cw=Math.max(0,e.cw+d);if(!e.prim)setAccWeights(prev=>({...prev,[e.name]:e.cw}));}setWorkout(w);};
   const togDone=()=>{const w={...workout};w.ex[ei].done=!w.ex[ei].done;setWorkout(w);};
   const updNotes=v=>{const w={...workout};w.ex[ei].notes=v;setWorkout(w);};
 
@@ -648,7 +744,26 @@ function App() {
     launchConfetti();
 
     setTimeout(async () => {
-      setHistory(h=>[...h,workout]);
+      const newHistory = [...history, workout];
+      setHistory(newHistory);
+
+      // Auto-generate next cycle when strength test is fully complete
+      if (cycles.length > 0) {
+        const curWd = allWeeks[workout.week];
+        if (curWd && curWd.isTest) {
+          const testDays = newHistory.filter(h=>h.week===workout.week).map(h=>h.day);
+          const uniqueDays = [...new Set(testDays)];
+          if (uniqueDays.length >= 5) {
+            const lastCycle = cycles[cycles.length - 1];
+            const nextStart = lastCycle.startWeek + 16;
+            if (!cycles.find(c=>c.startWeek===nextStart)) {
+              setCycles(prev=>[...prev, { startWeek:nextStart, oneRMs:{...saved1RMs}, accWeights:{...accWeights} }]);
+              setToast({ msg: `Next cycle ready! Weeks ${nextStart}-${nextStart+15}`, type: 'ok' });
+            }
+          }
+        }
+      }
+
       // Google Sheets sync (item 14)
       if (sheetsUrl) {
         setToast({ msg: 'Syncing to Sheets...', type: '' });
@@ -795,8 +910,8 @@ function App() {
               })}
             </div>
           </div>
-          {/* Week 30 generation prompt */}
-          {!allWeeks[30] && Object.keys(saved1RMs).length > 0 && (
+          {/* Cycle generation prompt */}
+          {cycles.length === 0 && Object.keys(saved1RMs).length > 0 && (
             <div className="card">
               <div className="ct">New 1RMs Recorded</div>
               {Object.entries(saved1RMs).map(([name, rm]) => (
@@ -805,11 +920,47 @@ function App() {
                   <span style={{color:'var(--green)',fontWeight:'bold',fontSize:13}}>{rm} lbs</span>
                 </div>
               ))}
-              <div style={{color:'var(--dim)',fontSize:12,marginTop:10,textAlign:'center'}}>
-                {Object.keys(saved1RMs).length < 5
-                  ? `${Object.keys(saved1RMs).length}/5+ primary exercises recorded. Complete Week 29 to generate Week 30.`
-                  : 'All 1RMs recorded! Week 30 is now available in the week selector.'}
-              </div>
+              {Object.keys(saved1RMs).length >= 5 ? (
+                <button className="btn bpr" style={{marginTop:10,width:'100%'}} onClick={()=>{
+                  setCycles([{ startWeek:30, oneRMs:{...saved1RMs}, accWeights:{...accWeights} }]);
+                  setWeek(30);
+                  setToast({ msg:'Cycle generated! Weeks 30-45 ready.', type:'ok' });
+                }}>{'\uD83D\uDD04'} Generate Weeks 30-45</button>
+              ) : (
+                <div style={{color:'var(--dim)',fontSize:12,marginTop:10,textAlign:'center'}}>
+                  {Object.keys(saved1RMs).length}/5+ primary exercises recorded. Complete strength test to generate next cycle.
+                </div>
+              )}
+            </div>
+          )}
+          {/* Current 1RMs card */}
+          {Object.keys(saved1RMs).length > 0 && cycles.length > 0 && (
+            <div className="card">
+              <div className="ct">Current 1RMs</div>
+              {Object.entries(saved1RMs).map(([name, rm]) => (
+                <div key={name} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--bdr)'}}>
+                  <span style={{fontSize:13}}>{name}</span>
+                  <span style={{color:'var(--red)',fontWeight:'bold',fontSize:13}}>{rm} lbs</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Accessory Weights card */}
+          {cycles.length > 0 && (
+            <div className="card">
+              <div className="ct">Accessory Weights</div>
+              {Object.entries(accWeights).map(([name, w]) => (
+                <div key={name} className="setting-row">
+                  <span className="setting-lbl">{name}</span>
+                  <input className="setting-input" style={{width:80,textAlign:'right'}}
+                    type={typeof w==='number'?'number':'text'} value={w}
+                    onChange={e=>{
+                      const val = e.target.value==='BW'?'BW': (parseFloat(e.target.value)||0);
+                      setAccWeights(prev=>({...prev,[name]:val}));
+                    }} />
+                </div>
+              ))}
+              <div style={{color:'var(--dim)',fontSize:11,marginTop:8,textAlign:'center'}}>Changes here update future generated cycles</div>
             </div>
           )}
           {/* Settings card */}
@@ -839,12 +990,28 @@ function App() {
         <div className={`modal${modal==='week'?' open':''}`}>
           <div className="mbox">
             <div className="mt">Select Week</div>
-            {weekKeys.map(w=>(
-              <button key={w} className={`wkbtn${week===w?' sel':''}`} onClick={()=>{setWeek(w);setModal(null);}}>
-                <strong>{allWeeks[w].label}</strong>
-                <div style={{fontSize:11,marginTop:3,opacity:.7}}>{allWeeks[w].note}</div>
-              </button>
-            ))}
+            <div style={{maxHeight:'70vh',overflowY:'auto'}}>
+              <div style={{fontSize:11,color:'var(--dim)',padding:'8px 0',textTransform:'uppercase',letterSpacing:1}}>Current Progress</div>
+              {[28,29].filter(w=>allWeeks[w]).map(w=>(
+                <button key={w} className={`wkbtn${week===w?' sel':''}`} onClick={()=>{setWeek(w);setModal(null);}}>
+                  <strong>{allWeeks[w].label}</strong>
+                  <div style={{fontSize:11,marginTop:3,opacity:.7}}>{allWeeks[w].note}</div>
+                </button>
+              ))}
+              {cycles.map((c,ci)=>(
+                <div key={ci}>
+                  <div style={{fontSize:11,color:'var(--dim)',padding:'8px 0',textTransform:'uppercase',letterSpacing:1}}>
+                    Cycle {ci+1} (Weeks {c.startWeek}-{c.startWeek+15})
+                  </div>
+                  {Array.from({length:16},(_,i)=>c.startWeek+i).filter(w=>allWeeks[w]).map(w=>(
+                    <button key={w} className={`wkbtn${week===w?' sel':''}`} onClick={()=>{setWeek(w);setModal(null);}}>
+                      <strong>{allWeeks[w].label}</strong>
+                      <div style={{fontSize:11,marginTop:3,opacity:.7}}>{allWeeks[w].note}</div>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
             <button className="btn bsc" onClick={()=>setModal(null)}>Cancel</button>
           </div>
         </div>
@@ -853,7 +1020,7 @@ function App() {
         <div className={`modal${modal==='dash'?' open':''}`}>
           <div className="mbox">
             <div className="mt">Program Dashboard</div>
-            {[['Current Week',`Week ${week}`],['Cycle',wd.cycle],['Intensity',wd.intensity],['Protocol',wd.note],['Next Week',wd.next],['Done This Week',`${doneDays.length} / 5`],['Total Saved',`${history.length}`]].map(([l,v])=>(
+            {[['Current Week',`Week ${week}`],['Cycle',wd.cycle],['Intensity',wd.intensity],['Protocol',wd.note],['Next Week',wd.next],['Done This Week',`${doneDays.length} / 5`],['Total Saved',`${history.length}`],['Cycles Generated',`${cycles.length}`]].map(([l,v])=>(
               <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'12px 0',borderBottom:'1px solid var(--bdr)'}}>
                 <span style={{color:'var(--dim)',fontSize:13}}>{l}</span>
                 <span style={{color:'var(--red)',fontWeight:'bold',fontSize:13}}>{v}</span>
