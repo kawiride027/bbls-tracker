@@ -205,27 +205,27 @@ function roundTo5(n) { return Math.round(n / 5) * 5; }
 // ── 16-Week Macrocycle Pattern ─────────────────────────────────
 const CYCLE_PATTERN = [
   // Meso 1
-  { pct:0.70, reps:10, sets:4, accReps:12, accSets:3, deload:false, test:false, meso:1, label:"Meso 1 Wk 1", rest:180 },
-  { pct:0.75, reps:8,  sets:4, accReps:12, accSets:3, deload:false, test:false, meso:1, label:"Meso 1 Wk 2", rest:180 },
-  { pct:0.80, reps:6,  sets:4, accReps:12, accSets:3, deload:false, test:false, meso:1, label:"Meso 1 Wk 3", rest:180 },
-  { pct:0.80, reps:3,  sets:3, accReps:6,  accSets:2, deload:true,  test:false, meso:1, label:"Meso 1 Deload", rest:180 },
+  { pct:0.70, reps:10, sets:4, accReps:"10-12", accMin:10, accMax:12, accSets:4, deload:false, test:false, meso:1, label:"Meso 1 Wk 1", rest:180 },
+  { pct:0.75, reps:8,  sets:4, accReps:"10-12", accMin:10, accMax:12, accSets:4, deload:false, test:false, meso:1, label:"Meso 1 Wk 2", rest:180 },
+  { pct:0.80, reps:6,  sets:4, accReps:"10-12", accMin:10, accMax:12, accSets:4, deload:false, test:false, meso:1, label:"Meso 1 Wk 3", rest:180 },
+  { pct:0.80, reps:3,  sets:3, accReps:6,       accMin:6,  accMax:6,  accSets:2, deload:true,  test:false, meso:1, label:"Meso 1 Deload", rest:180 },
   // Meso 2
-  { pct:0.75, reps:8,  sets:4, accReps:10, accSets:3, deload:false, test:false, meso:2, label:"Meso 2 Wk 1", rest:180 },
-  { pct:0.80, reps:6,  sets:4, accReps:10, accSets:3, deload:false, test:false, meso:2, label:"Meso 2 Wk 2", rest:180 },
-  { pct:0.85, reps:4,  sets:4, accReps:10, accSets:3, deload:false, test:false, meso:2, label:"Meso 2 Wk 3", rest:180 },
-  { pct:0.85, reps:3,  sets:3, accReps:5,  accSets:2, deload:true,  test:false, meso:2, label:"Meso 2 Deload", rest:180 },
+  { pct:0.75, reps:8,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:2, label:"Meso 2 Wk 1", rest:180 },
+  { pct:0.80, reps:6,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:2, label:"Meso 2 Wk 2", rest:180 },
+  { pct:0.85, reps:4,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:2, label:"Meso 2 Wk 3", rest:180 },
+  { pct:0.85, reps:3,  sets:3, accReps:5,       accMin:5,  accMax:5,  accSets:2, deload:true,  test:false, meso:2, label:"Meso 2 Deload", rest:180 },
   // Meso 3
-  { pct:0.80, reps:6,  sets:4, accReps:10, accSets:3, deload:false, test:false, meso:3, label:"Meso 3 Wk 1", rest:180 },
-  { pct:0.85, reps:4,  sets:4, accReps:10, accSets:3, deload:false, test:false, meso:3, label:"Meso 3 Wk 2", rest:180 },
-  { pct:0.90, reps:2,  sets:4, accReps:10, accSets:3, deload:false, test:false, meso:3, label:"Meso 3 Wk 3", rest:180 },
-  { pct:0.90, reps:3,  sets:3, accReps:5,  accSets:2, deload:true,  test:false, meso:3, label:"Meso 3 Deload", rest:180 },
+  { pct:0.80, reps:6,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:3, label:"Meso 3 Wk 1", rest:180 },
+  { pct:0.85, reps:4,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:3, label:"Meso 3 Wk 2", rest:180 },
+  { pct:0.90, reps:2,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:3, label:"Meso 3 Wk 3", rest:180 },
+  { pct:0.90, reps:3,  sets:3, accReps:5,       accMin:5,  accMax:5,  accSets:2, deload:true,  test:false, meso:3, label:"Meso 3 Deload", rest:180 },
   // Meso 4
-  { pct:0.85, reps:4,  sets:4, accReps:8,  accSets:3, deload:false, test:false, meso:4, label:"Meso 4 Wk 1", rest:180 },
-  { pct:0.90, reps:2,  sets:4, accReps:8,  accSets:3, deload:false, test:false, meso:4, label:"Meso 4 Wk 2", rest:180 },
+  { pct:0.85, reps:4,  sets:4, accReps:"6-8",   accMin:6,  accMax:8,  accSets:4, deload:false, test:false, meso:4, label:"Meso 4 Wk 1", rest:180 },
+  { pct:0.90, reps:2,  sets:4, accReps:"6-8",   accMin:6,  accMax:8,  accSets:4, deload:false, test:false, meso:4, label:"Meso 4 Wk 2", rest:180 },
   // Strength Test
-  { pct:0.95, reps:"AMRAP", sets:2, accReps:8, accSets:2, deload:false, test:true,  meso:4, label:"Strength Test", rest:300 },
+  { pct:0.95, reps:"AMRAP", sets:2, accReps:8,  accMin:8,  accMax:8,  accSets:2, deload:false, test:true,  meso:4, label:"Strength Test", rest:300 },
   // Full Deload
-  { pct:0.50, reps:6,  sets:2, accReps:3,  accSets:2, deload:true,  test:false, meso:4, label:"Full Deload", rest:180 },
+  { pct:0.50, reps:6,  sets:2, accReps:3,       accMin:3,  accMax:3,  accSets:2, deload:true,  test:false, meso:4, label:"Full Deload", rest:180 },
 ];
 
 // Exercises that should NOT be AMRAP-tested (1RM carries forward)
@@ -641,6 +641,17 @@ function App() {
   useEffect(()=>{localStorage.setItem('bblsCycles',JSON.stringify(cycles));},[cycles]);
   useEffect(()=>{localStorage.setItem('accWeights',JSON.stringify(accWeights));},[accWeights]);
   useEffect(()=>{localStorage.setItem('currentWeek',week);},[week]);
+
+  // Timer pauses when switching apps
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && ticking) {
+        setTicking(false);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [ticking]);
 
   // Timer with negative support + beep (items 4, 10)
   useEffect(()=>{
