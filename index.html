@@ -197,7 +197,48 @@ function calcPlates(total, bar) {
   return out.length ? out.join(', ') : 'Bar only';
 }
 
-// Epley formula (item 5)
+function calcPlatesCustom(total, bar, availablePlates, showPerSide) {
+  const perSide = (total - bar) / 2;
+  let rem = perSide;
+  const out = [];
+  
+  for (const p of availablePlates) {
+    const n = Math.floor(rem/p + 0.001);
+    if (n > 0) {
+      out.push(`${n}\u00d7${p%1?p:Math.floor(p)}`);
+      rem = Math.round((rem - n*p)*10)/10;
+    }
+  }
+  
+  if (showPerSide) {
+    return out.length ? out.join(', ') + ' per side' : 'No plates needed';
+  }
+  return out.length ? out.join(', ') : 'Bar only';
+}
+
+function calcPlatesForExercise(exerciseName, total, bar) {
+  // Leg Press: no bar, plates per side, no 55s
+  if (exerciseName === "Leg Press") {
+    const perSide = total / 2;
+    return calcPlatesCustom(perSide, 0, [45,35,25,10,5,2.5], true);
+  }
+  
+  // Seated Calf Raise: no bar, plates per side, no 55s
+  if (exerciseName === "Seated Calf Raise") {
+    const perSide = total / 2;
+    return calcPlatesCustom(perSide, 0, [45,35,25,10,5,2.5], true);
+  }
+  
+  // Bench variations: 45lb bar, no 55s
+  if (exerciseName === "Bench Press" || exerciseName === "Incline Bench" || exerciseName === "Close Grip Bench") {
+    return calcPlatesCustom(total, bar, [45,35,25,10,5,2.5], false);
+  }
+  
+  // Default: standard barbell with all plates
+  return calcPlates(total, bar);
+}
+
+// Epley formula
 function calcRM(w, r) { return r > 0 ? Math.round(w * (1 + 0.0333 * r)) : null; }
 
 function roundTo5(n) { return Math.round(n / 5) * 5; }
@@ -205,31 +246,31 @@ function roundTo5(n) { return Math.round(n / 5) * 5; }
 // ── 16-Week Macrocycle Pattern ─────────────────────────────────
 const CYCLE_PATTERN = [
   // Meso 1
-  { pct:0.70, reps:10, sets:4, accReps:"10-12", accMin:10, accMax:12, accSets:4, deload:false, test:false, meso:1, label:"Meso 1 Wk 1", rest:180 },
-  { pct:0.75, reps:8,  sets:4, accReps:"10-12", accMin:10, accMax:12, accSets:4, deload:false, test:false, meso:1, label:"Meso 1 Wk 2", rest:180 },
-  { pct:0.80, reps:6,  sets:4, accReps:"10-12", accMin:10, accMax:12, accSets:4, deload:false, test:false, meso:1, label:"Meso 1 Wk 3", rest:180 },
-  { pct:0.80, reps:3,  sets:3, accReps:6,       accMin:6,  accMax:6,  accSets:2, deload:true,  test:false, meso:1, label:"Meso 1 Deload", rest:180 },
+  { pct:0.70, reps:10, sets:4, accReps:"10-12", accMin:10, accMax:12, accSets:4, deload:false, test:false, meso:1, label:"Meso 1 Wk 1", rest:300 },
+  { pct:0.75, reps:8,  sets:4, accReps:"10-12", accMin:10, accMax:12, accSets:4, deload:false, test:false, meso:1, label:"Meso 1 Wk 2", rest:300 },
+  { pct:0.80, reps:6,  sets:4, accReps:"10-12", accMin:10, accMax:12, accSets:4, deload:false, test:false, meso:1, label:"Meso 1 Wk 3", rest:300 },
+  { pct:0.80, reps:3,  sets:3, accReps:6,       accMin:6,  accMax:6,  accSets:2, deload:true,  test:false, meso:1, label:"Meso 1 Deload", rest:300 },
   // Meso 2
-  { pct:0.75, reps:8,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:2, label:"Meso 2 Wk 1", rest:180 },
-  { pct:0.80, reps:6,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:2, label:"Meso 2 Wk 2", rest:180 },
-  { pct:0.85, reps:4,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:2, label:"Meso 2 Wk 3", rest:180 },
-  { pct:0.85, reps:3,  sets:3, accReps:5,       accMin:5,  accMax:5,  accSets:2, deload:true,  test:false, meso:2, label:"Meso 2 Deload", rest:180 },
+  { pct:0.75, reps:8,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:2, label:"Meso 2 Wk 1", rest:300 },
+  { pct:0.80, reps:6,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:2, label:"Meso 2 Wk 2", rest:300 },
+  { pct:0.85, reps:4,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:2, label:"Meso 2 Wk 3", rest:300 },
+  { pct:0.85, reps:3,  sets:3, accReps:5,       accMin:5,  accMax:5,  accSets:2, deload:true,  test:false, meso:2, label:"Meso 2 Deload", rest:300 },
   // Meso 3
-  { pct:0.80, reps:6,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:3, label:"Meso 3 Wk 1", rest:180 },
-  { pct:0.85, reps:4,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:3, label:"Meso 3 Wk 2", rest:180 },
-  { pct:0.90, reps:2,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:3, label:"Meso 3 Wk 3", rest:180 },
-  { pct:0.90, reps:3,  sets:3, accReps:5,       accMin:5,  accMax:5,  accSets:2, deload:true,  test:false, meso:3, label:"Meso 3 Deload", rest:180 },
+  { pct:0.80, reps:6,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:3, label:"Meso 3 Wk 1", rest:300 },
+  { pct:0.85, reps:4,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:3, label:"Meso 3 Wk 2", rest:300 },
+  { pct:0.90, reps:2,  sets:4, accReps:"8-10",  accMin:8,  accMax:10, accSets:4, deload:false, test:false, meso:3, label:"Meso 3 Wk 3", rest:300 },
+  { pct:0.90, reps:3,  sets:3, accReps:5,       accMin:5,  accMax:5,  accSets:2, deload:true,  test:false, meso:3, label:"Meso 3 Deload", rest:300 },
   // Meso 4
-  { pct:0.85, reps:4,  sets:4, accReps:"6-8",   accMin:6,  accMax:8,  accSets:4, deload:false, test:false, meso:4, label:"Meso 4 Wk 1", rest:180 },
-  { pct:0.90, reps:2,  sets:4, accReps:"6-8",   accMin:6,  accMax:8,  accSets:4, deload:false, test:false, meso:4, label:"Meso 4 Wk 2", rest:180 },
+  { pct:0.85, reps:4,  sets:4, accReps:"6-8",   accMin:6,  accMax:8,  accSets:4, deload:false, test:false, meso:4, label:"Meso 4 Wk 1", rest:300 },
+  { pct:0.90, reps:2,  sets:4, accReps:"6-8",   accMin:6,  accMax:8,  accSets:4, deload:false, test:false, meso:4, label:"Meso 4 Wk 2", rest:300 },
   // Strength Test
   { pct:0.95, reps:"AMRAP", sets:2, accReps:8,  accMin:8,  accMax:8,  accSets:2, deload:false, test:true,  meso:4, label:"Strength Test", rest:300 },
   // Full Deload
-  { pct:0.50, reps:6,  sets:2, accReps:3,       accMin:3,  accMax:3,  accSets:2, deload:true,  test:false, meso:4, label:"Full Deload", rest:180 },
+  { pct:0.50, reps:6,  sets:2, accReps:3,       accMin:3,  accMax:3,  accSets:2, deload:true,  test:false, meso:4, label:"Full Deload", rest:300 },
 ];
 
 // Exercises that should NOT be AMRAP-tested (1RM carries forward)
-const NO_TEST = new Set(["Machine Rear Delt Fly", "Flat Bench"]);
+const NO_TEST = new Set(["Flat Bench"]);
 
 const DAY_TEMPLATES = [
   { day:1, title:"Chest & Triceps", ex:[
@@ -271,7 +312,7 @@ const DEFAULT_ACC_WEIGHTS = {
   "Barbell Curl":100,
 };
 
-// ── Motivational Quotes (item 11) ──────────────────────────────
+// ── Motivational Quotes ────────────────────────────────────────
 const QUOTES = [
   { text: "The iron never lies. You either lift it or you don't.", author: "Henry Rollins" },
   { text: "Strength does not come from winning. Your struggles develop your strengths.", author: "Arnold Schwarzenegger" },
@@ -303,7 +344,7 @@ const QUOTES = [
 const CELEBRATION_EMOJIS = ['\u{1F981}','\u{1F4AA}','\u{1F525}','\u26A1','\u{1F44A}','\u{1F3C6}','\u{1F9BE}','\u{1F40D}'];
 const CELEBRATION_TEXTS = ["BEAST MODE!","IRON FORGED!","WARRIOR STATUS!","UNSTOPPABLE!","ABSOLUTE UNIT!","STRENGTH UNLOCKED!","LEGENDARY!"];
 
-// ── Confetti Engine (item 12) ──────────────────────────────────
+// ── Confetti Engine ────────────────────────────────────────────
 function launchConfetti() {
   const canvas = document.getElementById('confetti-canvas');
   if (!canvas) return;
@@ -353,7 +394,7 @@ function launchConfetti() {
   draw();
 }
 
-// ── Audio Beep (item 10) ───────────────────────────────────────
+// ── Audio Beep ─────────────────────────────────────────────────
 let audioCtx = null;
 function playBeep() {
   try {
@@ -370,7 +411,7 @@ function playBeep() {
   try { navigator.vibrate([200, 100, 200]); } catch(e) {}
 }
 
-// ── Google Sheets Sync (item 14) ───────────────────────────────
+// ── Google Sheets Sync ─────────────────────────────────────────
 async function syncToSheets(workout) {
   const url = localStorage.getItem('sheetsUrl');
   if (!url) return null;
@@ -403,9 +444,9 @@ async function syncToSheets(workout) {
 const WEEKS = {
   28:{
     label:"Week 28 \u2014 Deload", cycle:"Mesocycle 2 \u00b7 Deload",
-    intensity:"90%", note:"3 reps \u00b7 2-3 sets",
+    intensity:"90%", note:"3 reps \u00b7 2-3 sets \u00b7 Acc: 3 reps",
     next:"Week 29: Strength Test (AMRAP)",
-    rP:180, rA:120,
+    rP:300, rA:120,
     isDeload:true,
     days:{
       1:{title:"Chest & Triceps", ex:[
@@ -442,7 +483,7 @@ const WEEKS = {
   },
   29:{
     label:"Week 29 \u2014 Strength Test", cycle:"Strength Test Week",
-    intensity:"95% AMRAP", note:"Go to failure \u00b7 2 sets",
+    intensity:"95% AMRAP", note:"Go to failure \u00b7 2 sets \u00b7 Acc: 8 reps",
     next:"Week 30: Mesocycle 3 (70%)",
     rP:300, rA:120,
     isTest:true,
@@ -460,20 +501,21 @@ const WEEKS = {
         {id:8,name:"Seated Calf Raise", w:190,       sets:2,reps:8,prim:false},
       ]},
       3:{title:"Shoulders Test", ex:[
-        {id:9, name:"Military Press",   w:183,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:193},
-        {id:10,name:"DB Curls",         w:55,        sets:2,reps:8,prim:false},
-        {id:11,name:"Machine Side Raise",w:145,      sets:2,reps:8,prim:false},
+        {id:9, name:"Military Press",        w:183,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:193},
+        {id:10,name:"Machine Rear Delt Fly", w:204,bar:0, sets:2,reps:"AMRAP",prim:true,test:true,rm:215},
+        {id:11,name:"DB Curls",              w:55,        sets:2,reps:8,prim:false},
+        {id:12,name:"Machine Side Raise",    w:145,       sets:2,reps:8,prim:false},
       ]},
       4:{title:"Legs Test", ex:[
-        {id:12,name:"Barbell Squat",    w:174,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:183},
-        {id:13,name:"Leg Press",        w:448,bar:0, sets:2,reps:"AMRAP",prim:true,test:true,rm:472},
-        {id:14,name:"Leg Curl Lying",   w:135,       sets:2,reps:8,prim:false},
-        {id:15,name:"Standing Calf Raise",w:380,     sets:2,reps:8,prim:false},
+        {id:13,name:"Barbell Squat",    w:174,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:183},
+        {id:14,name:"Leg Press",        w:448,bar:0, sets:2,reps:"AMRAP",prim:true,test:true,rm:472},
+        {id:15,name:"Leg Curl Lying",   w:135,       sets:2,reps:8,prim:false},
+        {id:16,name:"Standing Calf Raise",w:380,     sets:2,reps:8,prim:false},
       ]},
       5:{title:"Chest Test 2", ex:[
-        {id:16,name:"Incline Bench",    w:239,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:252},
-        {id:17,name:"Seated Cable Row", w:185,       sets:2,reps:8,prim:false},
-        {id:18,name:"Barbell Curl",     w:100,       sets:2,reps:8,prim:false},
+        {id:17,name:"Incline Bench",    w:239,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:252},
+        {id:18,name:"Seated Cable Row", w:185,       sets:2,reps:8,prim:false},
+        {id:19,name:"Barbell Curl",     w:100,       sets:2,reps:8,prim:false},
       ]},
     }
   }
@@ -490,7 +532,9 @@ function generateCycle(startWeek, oneRMs, accW) {
     if (pat.test) cycleLabel = "Strength Test Week";
     else if (pat.deload && pat.meso===4) cycleLabel = `Cycle ${cycleNum} \u00b7 Full Deload`;
     else cycleLabel = `Cycle ${cycleNum} \u00b7 Meso ${pat.meso}${pat.deload?' Deload':''}`;
-    const noteStr = pat.test ? "Go to failure \u00b7 2 sets" : `${pat.reps} reps \u00b7 ${pat.sets} sets`;
+    const primNote = pat.test ? "Go to failure \u00b7 2 sets" : `${pat.reps} reps \u00b7 ${pat.sets} sets`;
+    const accNote = `Acc: ${pat.accReps} reps${pat.test?'':' \u00b7 '+pat.accSets+' sets'}`;
+    const noteStr = primNote + " \u00b7 " + accNote;
     const nextPat = CYCLE_PATTERN[idx+1];
     const nextLabel = nextPat
       ? `Week ${wn+1}: ${nextPat.label} (${Math.round(nextPat.pct*100)}%)`
@@ -523,7 +567,9 @@ function generateCycle(startWeek, oneRMs, accW) {
             ex.reps = pat.reps;
           }
         } else {
-          ex.w = et.bw ? "BW" : (accW[et.name] || 0);
+          // Accessory: use rep-range-specific weight
+          const accKey = et.name + " " + pat.accReps;
+          ex.w = et.bw ? "BW" : (accW[accKey] || accW[et.name] || 0);
           ex.sets = pat.accSets;
           ex.reps = pat.accReps;
           ex.prim = false;
@@ -601,9 +647,9 @@ function App() {
   const [workout, setWorkout] = useState(null);
   const [ei, setEi] = useState(0);
   const [history, setHistory] = useState(()=>JSON.parse(localStorage.getItem('wh')||'[]'));
-  const [timer, setTimer] = useState(180);
+  const [timer, setTimer] = useState(300);
   const [ticking, setTicking] = useState(false);
-  const [preset, setPreset] = useState(3);
+  const [preset, setPreset] = useState(5);
   const [modal, setModal] = useState(null);
   const [showQuote, setShowQuote] = useState(true);
   const [celebration, setCelebration] = useState(null);
@@ -615,7 +661,6 @@ function App() {
   const [accWeights, setAccWeights] = useState(()=>JSON.parse(localStorage.getItem('accWeights')||JSON.stringify(DEFAULT_ACC_WEIGHTS)));
   const beeped = useRef(false);
   const wakeLock = useRef(null);
-  const quoteRef = useRef(null);
 
   // Build all weeks: hardcoded 28-29 + generated cycles
   const allWeeks = { ...WEEKS };
@@ -642,18 +687,7 @@ function App() {
   useEffect(()=>{localStorage.setItem('accWeights',JSON.stringify(accWeights));},[accWeights]);
   useEffect(()=>{localStorage.setItem('currentWeek',week);},[week]);
 
-  // Timer pauses when switching apps
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && ticking) {
-        setTicking(false);
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [ticking]);
-
-  // Timer with negative support + beep (items 4, 10)
+  // Timer with negative support + beep
   useEffect(()=>{
     if(!ticking) return;
     const id=setInterval(()=>{
@@ -666,7 +700,7 @@ function App() {
     return ()=>clearInterval(id);
   },[ticking]);
 
-  // Wake Lock (item 9)
+  // Wake Lock
   const requestWakeLock = useCallback(async () => {
     try {
       if ('wakeLock' in navigator) {
@@ -717,16 +751,26 @@ function App() {
     const w={...workout}; const e=w.ex[ei];
     e.sets[si]=val!==''?parseInt(val):null;
 
-    // Progression only during normal weeks (item 3)
+    // Progression only during normal weeks
     if (!wd.isDeload && !wd.isTest) {
-      const tgt=typeof e.reps==='number'?e.reps:6;
-      const filled=e.sets.filter(s=>s!==null);
-      const fails=filled.filter(s=>s<tgt).length;
-      if(!e.prim) e.sugg=filled.length===e.sets.length&&fails===0?'up':null;
-      else e.sugg=fails>=3?'down':null;
+      if (typeof e.reps === 'string' && e.reps.includes('-')) {
+        const parts = e.reps.split('-');
+        const min = parseInt(parts[0]);
+        const max = parseInt(parts[1]);
+        const filled = e.sets.filter(s=>s!==null);
+        const fails = filled.filter(s=>s < min || s > max).length;
+        if (!e.prim) e.sugg = filled.length === e.sets.length && fails === 0 ? 'up' : null;
+        else e.sugg = fails >= 3 ? 'down' : null;
+      } else {
+        const tgt = typeof e.reps === 'number' ? e.reps : 6;
+        const filled = e.sets.filter(s=>s!==null);
+        const fails = filled.filter(s=>s<tgt).length;
+        if (!e.prim) e.sugg = filled.length === e.sets.length && fails === 0 ? 'up' : null;
+        else e.sugg = fails >= 3 ? 'down' : null;
+      }
     }
 
-    // Auto-save 1RM for strength test (item 6)
+    // Auto-save 1RM for strength test
     if (e.test && si === 0 && val !== '' && parseInt(val) > 0) {
       const new1RM = calcRM(e.cw, parseInt(val));
       if (new1RM) {
@@ -743,12 +787,25 @@ function App() {
     }
   };
 
-  const adjW=d=>{const w={...workout};const e=w.ex[ei];if(typeof e.cw==='number'){e.cw=Math.max(0,e.cw+d);if(!e.prim)setAccWeights(prev=>({...prev,[e.name]:e.cw}));}setWorkout(w);};
+  const adjW=d=>{
+    const w={...workout};
+    const e=w.ex[ei];
+    if(typeof e.cw==='number'){
+      e.cw=Math.max(0,e.cw+d);
+      if(!e.prim){
+        // Save with rep range
+        const accKey = e.name + " " + e.reps;
+        setAccWeights(prev=>({...prev,[accKey]:e.cw}));
+      }
+    }
+    setWorkout(w);
+  };
+  
   const togDone=()=>{const w={...workout};w.ex[ei].done=!w.ex[ei].done;setWorkout(w);};
   const updNotes=v=>{const w={...workout};w.ex[ei].notes=v;setWorkout(w);};
 
   const saveWorkout=async ()=>{
-    // Celebration (item 12)
+    // Celebration
     const emoji = CELEBRATION_EMOJIS[Math.floor(Math.random()*CELEBRATION_EMOJIS.length)];
     const text = CELEBRATION_TEXTS[Math.floor(Math.random()*CELEBRATION_TEXTS.length)];
     setCelebration({ emoji, text });
@@ -775,7 +832,7 @@ function App() {
         }
       }
 
-      // Google Sheets sync (item 14)
+      // Google Sheets sync
       if (sheetsUrl) {
         setToast({ msg: 'Syncing to Sheets...', type: '' });
         const ok = await syncToSheets(workout);
@@ -808,7 +865,7 @@ function App() {
     a.click();
   };
 
-  // Progress summary data (item 13)
+  // Progress summary data
   const getLast4Weeks = () => {
     const weeks = {};
     history.forEach(h => {
@@ -843,16 +900,25 @@ function App() {
               {new Date(workout.date).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}
             </div>
             {workout.ex.map((e,i)=>{
-              const t=typeof e.reps==='number'?e.reps:6;
               const weekData = allWeeks[workout.week];
               const showProg = weekData && !weekData.isDeload && !weekData.isTest;
+              
+              let tgtMin, tgtMax;
+              if (typeof e.reps === 'string' && e.reps.includes('-')) {
+                const parts = e.reps.split('-');
+                tgtMin = parseInt(parts[0]);
+                tgtMax = parseInt(parts[1]);
+              } else {
+                tgtMin = tgtMax = typeof e.reps === 'number' ? e.reps : 6;
+              }
+              
               return(
                 <div key={i} className="sumex">
                   <div className="sumname">{e.name} &mdash; {e.cw} lbs</div>
                   <div className="sumsets">
                     {e.sets.map((s,j)=>(
-                      <span key={j} className={`stag ${s===null?'mt':s>=t?'ok':'ng'}`}>
-                        {s===null?'\u2014':`${s} reps`}
+                      <span key={j} className={`stag ${s===null?'mt':(s>=tgtMin&&s<=tgtMax)?'ok':'ng'}`}>
+                        {s===null?'–':`${s} reps`}
                       </span>
                     ))}
                   </div>
@@ -931,7 +997,7 @@ function App() {
                   <span style={{color:'var(--green)',fontWeight:'bold',fontSize:13}}>{rm} lbs</span>
                 </div>
               ))}
-              {Object.keys(saved1RMs).length >= 5 ? (
+              {Object.keys(saved1RMs).length >= 6 ? (
                 <button className="btn bpr" style={{marginTop:10,width:'100%'}} onClick={()=>{
                   setCycles([{ startWeek:30, oneRMs:{...saved1RMs}, accWeights:{...accWeights} }]);
                   setWeek(30);
@@ -939,7 +1005,7 @@ function App() {
                 }}>{'\uD83D\uDD04'} Generate Weeks 30-45</button>
               ) : (
                 <div style={{color:'var(--dim)',fontSize:12,marginTop:10,textAlign:'center'}}>
-                  {Object.keys(saved1RMs).length}/5+ primary exercises recorded. Complete strength test to generate next cycle.
+                  {Object.keys(saved1RMs).length}/6+ primary exercises recorded. Complete strength test to generate next cycle.
                 </div>
               )}
             </div>
@@ -1041,7 +1107,7 @@ function App() {
           </div>
         </div>
 
-        {/* Progress / Last 4 Weeks (item 13) */}
+        {/* Progress / Last 4 Weeks */}
         <div className={`modal${modal==='progress'?' open':''}`}>
           <div className="mbox">
             <div className="mt">Progress - Last 4 Weeks</div>
@@ -1068,14 +1134,21 @@ function App() {
                           <div key={wi} className="prog-day">
                             <div className="prog-day-title">Day {wo.day}: {wo.title}</div>
                             {wo.ex.map((e, exi) => {
-                              const tgt = typeof e.reps === 'number' ? e.reps : 6;
+                              let tgtMin, tgtMax;
+                              if (typeof e.reps === 'string' && e.reps.includes('-')) {
+                                const parts = e.reps.split('-');
+                                tgtMin = parseInt(parts[0]);
+                                tgtMax = parseInt(parts[1]);
+                              } else {
+                                tgtMin = tgtMax = typeof e.reps === 'number' ? e.reps : 6;
+                              }
                               return (
                                 <div key={exi} className="prog-ex">
                                   <div className="prog-ex-name">{e.name} ({e.cw}lbs)</div>
                                   <div className="prog-ex-sets">
                                     {e.sets.map((s,si) => (
-                                      <span key={si} className={`prog-pill ${s===null?'mt':s>=tgt?'ok':'ng'}`}>
-                                        {s === null ? '-' : s}
+                                      <span key={si} className={`prog-pill ${s===null?'mt':(s>=tgtMin&&s<=tgtMax)?'ok':'ng'}`}>
+                                        {s === null ? '–' : s}
                                       </span>
                                     ))}
                                   </div>
@@ -1136,8 +1209,16 @@ function App() {
   }
 
   // ── Active Workout ─────────────────────────────────────────────
-  const tgt=typeof ex.reps==='number'?ex.reps:6;
-  const fails=ex.sets.filter(s=>s!==null&&s<tgt).length;
+  let tgtMin, tgtMax;
+  if (typeof ex.reps === 'string' && ex.reps.includes('-')) {
+    const parts = ex.reps.split('-');
+    tgtMin = parseInt(parts[0]);
+    tgtMax = parseInt(parts[1]);
+  } else {
+    tgtMin = tgtMax = typeof ex.reps === 'number' ? ex.reps : 6;
+  }
+  
+  const fails=ex.sets.filter(s=>s!==null&&(s<tgtMin||s>tgtMax)).length;
   const total=workout.ex.reduce((a,e)=>a+e.sets.filter(s=>s!==null).length,0);
   const poss=workout.ex.reduce((a,e)=>a+e.sets.length,0);
 
@@ -1153,7 +1234,7 @@ function App() {
         <div className="si"><div className="sl">Checked</div><div className="sv">{workout.ex.filter(e=>e.done).length}/{workout.ex.length}</div></div>
       </div>
       <div className="wrap">
-        {/* Motivational Quote (item 11) */}
+        {/* Motivational Quote */}
         {showQuote && ei === 0 && (
           <div className="quote-banner" onClick={()=>setShowQuote(false)}>
             <div className="quote-dismiss">{'\u2715'}</div>
@@ -1184,7 +1265,7 @@ function App() {
               <div className="pbox">
                 <div className="plbl">Load Per Side</div>
                 <div className="pval">
-                  {ex.bar===0 ? `${ex.cw/2} lbs per side` : calcPlates(ex.cw, ex.bar)}
+                  {ex.name === "Standing Calf Raise" ? `${ex.cw} lbs total` : calcPlatesForExercise(ex.name, ex.cw, ex.bar)}
                 </div>
               </div>
             )}
@@ -1192,11 +1273,12 @@ function App() {
           <div className="slbl">Log Sets &middot; Target: {ex.reps} reps</div>
           <div className="sgrid">
             {ex.sets.map((r,si)=>{
-              const hit=r!==null&&r>=tgt, miss=r!==null&&r<tgt;
+              const hit = r !== null && r >= tgtMin && r <= tgtMax;
+              const miss = r !== null && (r < tgtMin || r > tgtMax);
               return(
                 <div key={si} className={`sbox${hit?' hit':miss?' miss':''}`}>
                   <div className="sn">Set {si+1}</div>
-                  <input className="sinput" type="number" inputMode="numeric" value={r??''} placeholder="\u2014" onChange={e=>updSet(si,e.target.value)}/>
+                  <input className="sinput" type="number" inputMode="numeric" value={r??''} placeholder="–" onChange={e=>updSet(si,e.target.value)}/>
                 </div>
               );
             })}
@@ -1236,10 +1318,10 @@ function App() {
   );
 }
 
-// React 18 createRoot (item 15)
+// React 18 createRoot
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 
-// Service Worker registration (item 16)
+// Service Worker registration
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
