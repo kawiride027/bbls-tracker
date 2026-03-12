@@ -647,9 +647,9 @@ function App() {
   const [workout, setWorkout] = useState(null);
   const [ei, setEi] = useState(0);
   const [history, setHistory] = useState(()=>JSON.parse(localStorage.getItem('wh')||'[]'));
-  const [timer, setTimer] = useState(300);
-  const [ticking, setTicking] = useState(false);
-  const [preset, setPreset] = useState(5);
+  const [timerEndTime, setTimerEndTime] = useState(null);
+  const [timerDisplay, setTimerDisplay] = useState(0);
+  const [preset, setPreset] = useState(2);
   const [modal, setModal] = useState(null);
   const [showQuote, setShowQuote] = useState(true);
   const [celebration, setCelebration] = useState(null);
@@ -687,18 +687,28 @@ function App() {
   useEffect(()=>{localStorage.setItem('accWeights',JSON.stringify(accWeights));},[accWeights]);
   useEffect(()=>{localStorage.setItem('currentWeek',week);},[week]);
 
-  // Timer with negative support + beep
+  // Timestamp-based timer that works in background
   useEffect(()=>{
-    if(!ticking) return;
-    const id=setInterval(()=>{
-      setTimer(t=>{
-        const next = t - 1;
-        if (t === 1 && !beeped.current) { playBeep(); beeped.current = true; }
-        return next;
-      });
-    },1000);
-    return ()=>clearInterval(id);
-  },[ticking]);
+    if (!timerEndTime) {
+      setTimerDisplay(preset * 60);
+      return;
+    }
+    
+    const updateTimer = () => {
+      const now = Date.now();
+      const remaining = Math.floor((timerEndTime - now) / 1000);
+      setTimerDisplay(remaining);
+      
+      if (remaining === 0 && !beeped.current) {
+        playBeep();
+        beeped.current = true;
+      }
+    };
+    
+    updateTimer();
+    const id = setInterval(updateTimer, 100);
+    return () => clearInterval(id);
+  }, [timerEndTime, preset]);
 
   // Wake Lock
   const requestWakeLock = useCallback(async () => {
@@ -733,7 +743,26 @@ function App() {
     const abs=Math.abs(s);
     return `${neg?'-':''}${Math.floor(abs/60)}:${String(abs%60).padStart(2,'0')}`;
   };
-  const setPre=m=>{setPreset(m);setTimer(m*60);setTicking(false);beeped.current=false;};
+  
+  const setPre=m=>{
+    setPreset(m);
+    setTimerEndTime(null);
+    beeped.current=false;
+  };
+  
+  const startTimer=(seconds)=>{
+    setTimerEndTime(Date.now() + seconds * 1000);
+    beeped.current = false;
+  };
+  
+  const pauseTimer=()=>{
+    setTimerEndTime(null);
+  };
+  
+  const resetTimer=()=>{
+    setTimerEndTime(null);
+    beeped.current = false;
+  };
 
   const startDay=day=>{
     const dayData=wd.days[day];
@@ -742,6 +771,11 @@ function App() {
       ex: dayData.ex.map(e=>({...e, cw:e.w, sets:Array(e.sets).fill(null), notes:'', done:false, sugg:null}))
     });
     setEi(0); setModal(null); setShowQuote(true);
+    // Set initial preset based on first exercise type
+    const firstEx = dayData.ex[0];
+    const initialPreset = firstEx.prim ? 5 : 2;
+    setPreset(initialPreset);
+    setTimerEndTime(null);
     requestWakeLock();
   };
 
@@ -783,7 +817,8 @@ function App() {
     setWorkout(w);
     if(val!==''&&si<e.sets.length-1){
       const rest=e.prim?wd.rP:wd.rA;
-      setPre(rest/60); setTimer(rest); setTicking(true);
+      setPre(rest/60);
+      startTimer(rest);
     }
   };
 
@@ -840,12 +875,12 @@ function App() {
         else if (ok === false) setToast({ msg: '\u2717 Sync failed', type: 'err' });
       }
       setCelebration(null);
-      setWorkout(null); setEi(0); setTicking(false); setModal(null);
+      setWorkout(null); setEi(0); setTimerEndTime(null); setModal(null);
       releaseWakeLock();
     }, 3000);
   };
 
-  const abandon=()=>{setWorkout(null);setEi(0);setTicking(false);setModal(null);releaseWakeLock();};
+  const abandon=()=>{setWorkout(null);setEi(0);setTimerEndTime(null);setModal(null);releaseWakeLock();};
   const delHist=i=>setHistory(h=>h.filter((_,j)=>j!==i));
 
   const exportCSV=()=>{
@@ -1221,6 +1256,8 @@ function App() {
   const fails=ex.sets.filter(s=>s!==null&&(s<tgtMin||s>tgtMax)).length;
   const total=workout.ex.reduce((a,e)=>a+e.sets.filter(s=>s!==null).length,0);
   const poss=workout.ex.reduce((a,e)=>a+e.sets.length,0);
+  
+  const ticking = timerEndTime !== null;
 
   return(
     <div>
@@ -1284,13 +1321,13 @@ function App() {
             })}
           </div>
           <div className="tcard">
-            <div className={`tdisp${ticking?' tick':''}${timer<0?' neg':''}`}>{fmt(timer)}</div>
+            <div className={`tdisp${ticking?' tick':''}${timerDisplay<0?' neg':''}`}>{fmt(timerDisplay)}</div>
             <div className="tpre">
               {[2,3,5].map(m=><button key={m} className={`tpb${preset===m?' on':''}`} onClick={()=>setPre(m)}>{m} MIN</button>)}
             </div>
             <div className="tctrls">
-              <button className="tb" onClick={()=>setTicking(t=>!t)}>{ticking?'Pause':'Start'}</button>
-              <button className="tb" onClick={()=>{setTimer(preset*60);setTicking(false);beeped.current=false;}}>Reset</button>
+              <button className="tb" onClick={()=>ticking?pauseTimer():startTimer(preset*60)}>{ticking?'Pause':'Start'}</button>
+              <button className="tb" onClick={resetTimer}>Reset</button>
             </div>
           </div>
           <div className="wlbl" style={{margin:'14px 0 8px'}}>Notes</div>
@@ -1310,8 +1347,26 @@ function App() {
       </div>
       <div className="navb">
         <button className="nb dng" onClick={()=>setModal('quit')}>{'\u2715'} Quit</button>
-        <button className="nb" onClick={()=>ei>0&&setEi(i=>i-1)} disabled={ei===0}>{'\u2190'} Prev</button>
-        <button className="nb" onClick={()=>ei<workout.ex.length-1&&setEi(i=>i+1)} disabled={ei===workout.ex.length-1}>Next {'\u2192'}</button>
+        <button className="nb" onClick={()=>{
+          if(ei>0) {
+            const newEi = ei-1;
+            setEi(newEi);
+            const newEx = workout.ex[newEi];
+            const newPreset = newEx.prim ? 5 : 2;
+            setPreset(newPreset);
+            resetTimer();
+          }
+        }} disabled={ei===0}>{'\u2190'} Prev</button>
+        <button className="nb" onClick={()=>{
+          if(ei<workout.ex.length-1) {
+            const newEi = ei+1;
+            setEi(newEi);
+            const newEx = workout.ex[newEi];
+            const newPreset = newEx.prim ? 5 : 2;
+            setPreset(newPreset);
+            resetTimer();
+          }
+        }} disabled={ei===workout.ex.length-1}>Next {'\u2192'}</button>
         <button className="nb pr" onClick={()=>setModal('save')}>{'\u2713'} Finish</button>
       </div>
     </div>
