@@ -651,8 +651,10 @@ function App() {
   const [cycles, setCycles] = useState(()=>JSON.parse(localStorage.getItem('bblsCycles')||'[]'));
   const [accWeights, setAccWeights] = useState(()=>JSON.parse(localStorage.getItem('accWeights')||JSON.stringify(DEFAULT_ACC_WEIGHTS)));
   const [accProgressData, setAccProgressData] = useState(null);
+  const [repRangeAlertData, setRepRangeAlertData] = useState(null);
   const beeped = useRef(false);
   const wakeLock = useRef(null);
+  const pendingWeightOverrides = useRef({});
   // Build all weeks: hardcoded 28-29 + generated cycles
   const allWeeks = { ...WEEKS };
   cycles.forEach(c => {
@@ -747,18 +749,21 @@ function App() {
     setTimerEndTime(null);
     beeped.current = false;
   };
-  const startDay=day=>{
+  const startDay=(day, overrides = {})=>{
     const dayData=wd.days[day];
     setWorkout({
       week, day, title:dayData.title, date:new Date().toISOString(),
-      ex: dayData.ex.map(e=>({...e, cw:e.w, sets:Array(e.sets).fill(null), notes:'', done:false, sugg:null}))
+      ex: dayData.ex.map(e=>{
+        const w = overrides[e.name] !== undefined ? overrides[e.name] : e.w;
+        return {...e, cw:w, sets:Array(e.sets).fill(null), notes:'', done:false, sugg:null};
+      })
     });
     setEi(0); setModal(null); setShowQuote(true);
-    // Set initial preset based on first exercise type
     const firstEx = dayData.ex[0];
     const initialPreset = firstEx.prim ? 5 : 2;
     setPreset(initialPreset);
     setTimerEndTime(null);
+    pendingWeightOverrides.current = {};
     requestWakeLock();
   };
   // ── Accessory Weight Progression Check ──────────────────────────
@@ -802,7 +807,86 @@ function App() {
     });
     return prompts;
   };
+  // ── Rep Range Change Detection ────────────────────────────────
+  const checkRepRangeChange = (day) => {
+    if (!wd || wd.isDeload || wd.isTest) return [];
+    const dayData = wd.days[day];
+    if (!dayData) return [];
+    const candidates = history
+      .filter(h => h.day === day && h.week < week)
+      .sort((a, b) => b.week - a.week);
+    let prevWo = null;
+    for (const wo of candidates) {
+      const woWd = allWeeks[wo.week];
+      if (woWd && !woWd.isDeload && !woWd.isTest) { prevWo = wo; break; }
+    }
+    if (!prevWo) return [];
+    const prompts = [];
+    dayData.ex.forEach(e => {
+      if (e.prim) return;
+      if (typeof e.w !== 'number') return;
+      const prevEx = prevWo.ex.find(pe => pe.name === e.name);
+      if (!prevEx) return;
+      const currRange = String(e.reps);
+      const prevRange = String(prevEx.reps);
+      if (currRange === prevRange) return;
+      const rangeKey = e.name + " " + currRange;
+      const storedWeight = typeof accWeights[rangeKey] === 'number' ? accWeights[rangeKey] : null;
+      const getMaxReps = r => { const s = String(r); return s.includes('-') ? parseInt(s.split('-')[1]) : (parseInt(s) || 10); };
+      const direction = getMaxReps(currRange) < getMaxReps(prevRange) ? 'heavier' : 'lighter';
+      const baseWeight = storedWeight !== null ? storedWeight : e.w;
+      prompts.push({
+        name: e.name, baseWeight, currentWeight: e.w, storedWeight,
+        oldRange: prevRange, newRange: currRange, direction,
+        prevWeight: typeof prevEx.cw === 'number' ? prevEx.cw : null,
+        adjustment: 0,
+      });
+    });
+    return prompts;
+  };
   const handleDayClick = (day) => {
+    const rangePrompts = checkRepRangeChange(day);
+    if (rangePrompts.length > 0) {
+      setRepRangeAlertData({ day, prompts: rangePrompts });
+      return;
+    }
+    const prompts = checkAccessoryProgression(day);
+    if (prompts.length > 0) {
+      setAccProgressData({ day, prompts });
+      return;
+    }
+    startDay(day);
+  };
+  const setRepRangeDecision = (idx, adj) => {
+    setRepRangeAlertData(prev => {
+      const prompts = prev.prompts.map((p, i) => i === idx ? { ...p, adjustment: adj } : p);
+      return { ...prev, prompts };
+    });
+  };
+  const confirmRepRangeAlert = () => {
+    const { day, prompts } = repRangeAlertData;
+    const newAccWeights = { ...accWeights };
+    const overrides = {};
+    prompts.forEach(p => {
+      const finalWeight = p.baseWeight + (p.adjustment || 0);
+      overrides[p.name] = finalWeight;
+      newAccWeights[p.name + " " + p.newRange] = finalWeight;
+    });
+    setAccWeights(newAccWeights);
+    pendingWeightOverrides.current = overrides;
+    setRepRangeAlertData(null);
+    const rangeChangeNames = new Set(prompts.map(p => p.name));
+    const progressPrompts = checkAccessoryProgression(day)
+      .filter(p => !rangeChangeNames.has(p.name));
+    if (progressPrompts.length > 0) {
+      setAccProgressData({ day, prompts: progressPrompts });
+      return;
+    }
+    startDay(day, overrides);
+  };
+  const skipRepRangeAlert = () => {
+    const { day } = repRangeAlertData;
+    setRepRangeAlertData(null);
     const prompts = checkAccessoryProgression(day);
     if (prompts.length > 0) {
       setAccProgressData({ day, prompts });
@@ -820,6 +904,7 @@ function App() {
     const { day, prompts } = accProgressData;
     const newAccWeights = { ...accWeights };
     const adjustments = {};
+    const overrides = { ...pendingWeightOverrides.current };
     const dayData = wd.days[day];
     prompts.forEach(p => {
       const adj = p.adjustment || 0;
@@ -838,12 +923,16 @@ function App() {
     setWorkout({
       week, day, title: dayData.title, date: new Date().toISOString(),
       ex: dayData.ex.map(e => {
+        if (overrides[e.name] !== undefined) {
+          return { ...e, cw: overrides[e.name], sets: Array(e.sets).fill(null), notes: '', done: false, sugg: null };
+        }
         const adj = adjustments[e.name] || 0;
         const w = typeof e.w === 'number' ? e.w + adj : e.w;
         return { ...e, cw: w, sets: Array(e.sets).fill(null), notes: '', done: false, sugg: null };
       })
     });
     setAccProgressData(null);
+    pendingWeightOverrides.current = {};
     setEi(0); setModal(null); setShowQuote(true);
     const firstEx = dayData.ex[0];
     const initialPreset = firstEx.prim ? 5 : 2;
@@ -853,8 +942,9 @@ function App() {
   };
   const skipProgression = () => {
     const { day } = accProgressData;
+    const overrides = { ...pendingWeightOverrides.current };
     setAccProgressData(null);
-    startDay(day);
+    startDay(day, overrides);
   };
   const ex=workout?workout.ex[ei]:null;
   const updSet=(si,val)=>{
@@ -1021,6 +1111,46 @@ function App() {
         <div className="confetti-emoji">{celebration.emoji}</div>
         <div className="confetti-text">{celebration.text}</div>
         <div className="confetti-sub">Saving workout...</div>
+      </div>
+    );
+  }
+  // ── Rep Range Change Alert ────────────────────────────────────
+  if (repRangeAlertData) {
+    return (
+      <div>
+        <div className="hdr">
+          <div className="hdr-t">Rep Range Changed</div>
+          <div className="hdr-s">New mesocycle &mdash; review accessory weights</div>
+        </div>
+        <div className="wrap" style={{paddingTop:20}}>
+          <div className="alrt warn" style={{marginBottom:16}}>
+            {'\u26A0\uFE0F'} Your accessory rep ranges changed this mesocycle. Adjust weights for the new targets.
+          </div>
+          {repRangeAlertData.prompts.map((p, idx) => (
+            <div key={p.name} className={`prog-prompt ${p.direction==='heavier'?'up':'dn'}`}>
+              <div className="prog-prompt-name">{p.name}</div>
+              <div className="prog-prompt-info">
+                Rep range: <strong>{p.oldRange}</strong> {'\u2192'} <strong>{p.newRange}</strong>
+                {p.direction === 'heavier' ? ' (fewer reps = go heavier)' : ' (more reps = go lighter)'}
+                <br/>
+                Starting at: <strong>{p.baseWeight} lbs</strong>
+                {p.storedWeight !== null && p.storedWeight !== p.currentWeight
+                  ? ` (last used @ ${p.newRange})`
+                  : ''}
+                {p.prevWeight !== null ? ` \u00b7 Was: ${p.prevWeight} lbs @ ${p.oldRange}` : ''}
+              </div>
+              <div className="prog-prompt-btns">
+                <button className={`prog-prompt-btn${p.adjustment===-10?' sel':''}`} onClick={()=>setRepRangeDecision(idx,-10)}>-10</button>
+                <button className={`prog-prompt-btn${p.adjustment===-5?' sel':''}`} onClick={()=>setRepRangeDecision(idx,-5)}>-5</button>
+                <button className={`prog-prompt-btn keep${p.adjustment===0?' sel':''}`} onClick={()=>setRepRangeDecision(idx,0)}>Keep</button>
+                <button className={`prog-prompt-btn${p.adjustment===5?' sel':''}`} onClick={()=>setRepRangeDecision(idx,5)}>+5</button>
+                <button className={`prog-prompt-btn${p.adjustment===10?' sel':''}`} onClick={()=>setRepRangeDecision(idx,10)}>+10</button>
+              </div>
+            </div>
+          ))}
+          <button className="btn bok" style={{marginTop:16}} onClick={confirmRepRangeAlert}>{'\u2713'} Continue</button>
+          <button className="btn bsc" onClick={skipRepRangeAlert}>Skip &mdash; Use Programmed Weights</button>
+        </div>
       </div>
     );
   }
