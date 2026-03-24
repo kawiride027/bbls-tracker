@@ -958,7 +958,8 @@ function App() {
         const max = parseInt(parts[1]);
         const filled = e.sets.filter(s=>s!==null);
         const fails = filled.filter(s=>s < min || s > max).length;
-        if (!e.prim) e.sugg = filled.length === e.sets.length && fails === 0 ? 'up' : null;
+        const allHitMax = filled.length === e.sets.length && filled.every(s => s >= max);
+        if (!e.prim) e.sugg = allHitMax ? 'up' : null;
         else e.sugg = fails >= 3 ? 'down' : null;
       } else {
         const tgt = typeof e.reps === 'number' ? e.reps : 6;
