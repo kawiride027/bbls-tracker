@@ -173,6 +173,17 @@
     .setting-lbl { font-size:13px; color:var(--txt); }
     .setting-input { background:var(--sec); border:1px solid var(--bdr); border-radius:8px; padding:8px 12px; color:var(--txt); font-size:13px; width:100%; font-family:'Roboto Condensed',sans-serif; }
     .setting-input:focus { outline:none; border-color:var(--red); }
+    /* Progression prompts */
+    .prog-prompt { background:var(--sec); border-radius:10px; padding:14px; margin-bottom:12px; }
+    .prog-prompt.up { border-left:3px solid var(--green); }
+    .prog-prompt.dn { border-left:3px solid var(--warn); }
+    .prog-prompt-name { font-weight:bold; font-size:14px; color:var(--red); margin-bottom:2px; }
+    .prog-prompt-info { font-size:12px; color:var(--dim); margin-bottom:10px; line-height:1.4; }
+    .prog-prompt-btns { display:flex; gap:8px; flex-wrap:wrap; }
+    .prog-prompt-btn { padding:8px 14px; border-radius:8px; border:1px solid var(--bdr); background:var(--sec); color:var(--txt); font-size:13px; font-weight:bold; cursor:pointer; transition:all .2s; font-family:'Roboto Condensed',sans-serif; }
+    .prog-prompt-btn:active { transform:scale(.95); }
+    .prog-prompt-btn.sel { background:var(--red); border-color:var(--red); color:#fff; }
+    .prog-prompt-btn.keep.sel { background:var(--dim); border-color:var(--dim); color:#000; }
     /* Confetti canvas */
     #confetti-canvas { position:fixed; inset:0; z-index:998; pointer-events:none; }
   </style>
@@ -185,7 +196,6 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
-
 // ── Utilities ──────────────────────────────────────────────────
 function calcPlates(total, bar) {
   const per = (total - bar) / 2;
@@ -196,7 +206,6 @@ function calcPlates(total, bar) {
   }
   return out.length ? out.join(', ') : 'Bar only';
 }
-
 function calcPlatesCustom(total, bar, availablePlates, showPerSide) {
   const perSide = (total - bar) / 2;
   let rem = perSide;
@@ -215,7 +224,6 @@ function calcPlatesCustom(total, bar, availablePlates, showPerSide) {
   }
   return out.length ? out.join(', ') : 'Bar only';
 }
-
 function calcPlatesForExercise(exerciseName, total, bar) {
   // Leg Press: no bar, plates per side, no 55s
   if (exerciseName === "Leg Press") {
@@ -237,12 +245,9 @@ function calcPlatesForExercise(exerciseName, total, bar) {
   // Default: standard barbell with all plates
   return calcPlates(total, bar);
 }
-
 // Epley formula
 function calcRM(w, r) { return r > 0 ? Math.round(w * (1 + 0.0333 * r)) : null; }
-
 function roundTo5(n) { return Math.round(n / 5) * 5; }
-
 // ── 16-Week Macrocycle Pattern ─────────────────────────────────
 const CYCLE_PATTERN = [
   // Meso 1
@@ -268,10 +273,8 @@ const CYCLE_PATTERN = [
   // Full Deload
   { pct:0.50, reps:6,  sets:2, accReps:3,       accMin:3,  accMax:3,  accSets:2, deload:true,  test:false, meso:4, label:"Full Deload", rest:300 },
 ];
-
 // Exercises that should NOT be AMRAP-tested (1RM carries forward)
 const NO_TEST = new Set(["Flat Bench"]);
-
 const DAY_TEMPLATES = [
   { day:1, title:"Chest & Triceps", ex:[
     { name:"Bench Press",        bar:45, prim:true },
@@ -304,14 +307,12 @@ const DAY_TEMPLATES = [
     { name:"Barbell Curl",     bar:null, prim:false },
   ]},
 ];
-
 const DEFAULT_ACC_WEIGHTS = {
   "Machine Side Raise":145, "Tricep Rope PD":87.5, "Pull Ups":"BW",
   "One Arm DB Row":110, "Seated Calf Raise":190, "DB Curls":55,
   "Leg Curl Lying":135, "Standing Calf Raise":380, "Seated Cable Row":185,
   "Barbell Curl":100,
 };
-
 // ── Motivational Quotes ────────────────────────────────────────
 const QUOTES = [
   { text: "The iron never lies. You either lift it or you don't.", author: "Henry Rollins" },
@@ -340,10 +341,8 @@ const QUOTES = [
   { text: "Motivation is what gets you started. Habit is what keeps you going.", author: "Jim Ryun" },
   { text: "Suffer the pain of discipline or suffer the pain of regret.", author: "Jim Rohn" },
 ];
-
 const CELEBRATION_EMOJIS = ['\u{1F981}','\u{1F4AA}','\u{1F525}','\u26A1','\u{1F44A}','\u{1F3C6}','\u{1F9BE}','\u{1F40D}'];
 const CELEBRATION_TEXTS = ["BEAST MODE!","IRON FORGED!","WARRIOR STATUS!","UNSTOPPABLE!","ABSOLUTE UNIT!","STRENGTH UNLOCKED!","LEGENDARY!"];
-
 // ── Confetti Engine ────────────────────────────────────────────
 function launchConfetti() {
   const canvas = document.getElementById('confetti-canvas');
@@ -393,7 +392,6 @@ function launchConfetti() {
   }
   draw();
 }
-
 // ── Audio Beep ─────────────────────────────────────────────────
 let audioCtx = null;
 function playBeep() {
@@ -410,7 +408,6 @@ function playBeep() {
   } catch(e) {}
   try { navigator.vibrate([200, 100, 200]); } catch(e) {}
 }
-
 // ── Google Sheets Sync ─────────────────────────────────────────
 async function syncToSheets(workout) {
   const url = localStorage.getItem('sheetsUrl');
@@ -439,7 +436,6 @@ async function syncToSheets(workout) {
     return false;
   }
 }
-
 // ── Week Data ──────────────────────────────────────────────────
 const WEEKS = {
   28:{
@@ -520,7 +516,6 @@ const WEEKS = {
     }
   }
 };
-
 // ── Cycle Generation ───────────────────────────────────────────
 function generateCycle(startWeek, oneRMs, accW) {
   const cycleNum = Math.max(1, Math.ceil((startWeek - 14) / 16));
@@ -539,7 +534,6 @@ function generateCycle(startWeek, oneRMs, accW) {
     const nextLabel = nextPat
       ? `Week ${wn+1}: ${nextPat.label} (${Math.round(nextPat.pct*100)}%)`
       : `Week ${wn+1}: Next Cycle begins`;
-
     const days = {};
     DAY_TEMPLATES.forEach((tmpl, di) => {
       const dayNum = di + 1;
@@ -578,7 +572,6 @@ function generateCycle(startWeek, oneRMs, accW) {
       });
       days[dayNum] = { title: dayTitle, ex: exercises };
     });
-
     weeks[wn] = {
       label: `Week ${wn} \u2014 ${pat.label}`,
       cycle: cycleLabel,
@@ -594,7 +587,6 @@ function generateCycle(startWeek, oneRMs, accW) {
   });
   return weeks;
 }
-
 // ── PIN Screen ─────────────────────────────────────────────────
 function PinScreen({ onUnlock }) {
   const [pin, setPin] = useState('');
@@ -636,7 +628,6 @@ function PinScreen({ onUnlock }) {
     </div>
   );
 }
-
 // ── Main App ───────────────────────────────────────────────────
 function App() {
   const [unlocked, setUnlocked] = useState(()=>{
@@ -659,9 +650,9 @@ function App() {
   const [expandedWeeks, setExpandedWeeks] = useState({});
   const [cycles, setCycles] = useState(()=>JSON.parse(localStorage.getItem('bblsCycles')||'[]'));
   const [accWeights, setAccWeights] = useState(()=>JSON.parse(localStorage.getItem('accWeights')||JSON.stringify(DEFAULT_ACC_WEIGHTS)));
+  const [accProgressData, setAccProgressData] = useState(null);
   const beeped = useRef(false);
   const wakeLock = useRef(null);
-
   // Build all weeks: hardcoded 28-29 + generated cycles
   const allWeeks = { ...WEEKS };
   cycles.forEach(c => {
@@ -669,7 +660,6 @@ function App() {
   });
   const wd = allWeeks[week];
   const doneDays = history.filter(h=>h.week===week).map(h=>h.day);
-
   // Pick a quote for today
   const [quote] = useState(() => {
     let last = parseInt(localStorage.getItem('lastQuote') || '-1');
@@ -678,7 +668,6 @@ function App() {
     localStorage.setItem('lastQuote', idx);
     return QUOTES[idx];
   });
-
   useEffect(()=>{localStorage.setItem('wh',JSON.stringify(history));},[history]);
   useEffect(()=>{if(unlocked)localStorage.setItem('lastActive',Date.now());},[unlocked]);
   useEffect(()=>{localStorage.setItem('saved1RMs',JSON.stringify(saved1RMs));},[saved1RMs]);
@@ -686,7 +675,6 @@ function App() {
   useEffect(()=>{localStorage.setItem('bblsCycles',JSON.stringify(cycles));},[cycles]);
   useEffect(()=>{localStorage.setItem('accWeights',JSON.stringify(accWeights));},[accWeights]);
   useEffect(()=>{localStorage.setItem('currentWeek',week);},[week]);
-
   // Timestamp-based timer that works in background
   useEffect(()=>{
     if (!timerEndTime) {
@@ -709,7 +697,6 @@ function App() {
     const id = setInterval(updateTimer, 100);
     return () => clearInterval(id);
   }, [timerEndTime, preset]);
-
   // Wake Lock
   const requestWakeLock = useCallback(async () => {
     try {
@@ -721,7 +708,6 @@ function App() {
   const releaseWakeLock = useCallback(() => {
     if (wakeLock.current) { wakeLock.current.release(); wakeLock.current = null; }
   }, []);
-
   // Auto-dismiss quote
   useEffect(() => {
     if (workout && showQuote) {
@@ -729,7 +715,6 @@ function App() {
       return () => clearTimeout(t);
     }
   }, [workout, showQuote]);
-
   // Toast auto-dismiss
   useEffect(() => {
     if (toast) {
@@ -737,7 +722,6 @@ function App() {
       return () => clearTimeout(t);
     }
   }, [toast]);
-
   const fmt=s=>{
     const neg=s<0;
     const abs=Math.abs(s);
@@ -763,7 +747,6 @@ function App() {
     setTimerEndTime(null);
     beeped.current = false;
   };
-
   const startDay=day=>{
     const dayData=wd.days[day];
     setWorkout({
@@ -778,13 +761,105 @@ function App() {
     setTimerEndTime(null);
     requestWakeLock();
   };
-
+  // ── Accessory Weight Progression Check ──────────────────────────
+  function parseRepRange(reps) {
+    if (typeof reps === 'string' && reps.includes('-')) {
+      const parts = reps.split('-');
+      return { min: parseInt(parts[0]), max: parseInt(parts[1]) };
+    }
+    const n = typeof reps === 'number' ? reps : 6;
+    return { min: n, max: n };
+  }
+  const checkAccessoryProgression = (day) => {
+    if (!wd || wd.isDeload || wd.isTest) return [];
+    const dayData = wd.days[day];
+    if (!dayData) return [];
+    const candidates = history
+      .filter(h => h.day === day && h.week < week)
+      .sort((a, b) => b.week - a.week);
+    let prevWo = null;
+    for (const wo of candidates) {
+      const woWd = allWeeks[wo.week];
+      if (woWd && !woWd.isDeload && !woWd.isTest) { prevWo = wo; break; }
+    }
+    if (!prevWo) return [];
+    const prompts = [];
+    dayData.ex.forEach(e => {
+      if (e.prim) return;
+      if (typeof e.w !== 'number') return;
+      const prevEx = prevWo.ex.find(pe => pe.name === e.name);
+      if (!prevEx) return;
+      const prevSets = (prevEx.sets || []).filter(s => s !== null);
+      if (prevSets.length === 0) return;
+      const { min: bottomOfRange, max: topOfRange } = parseRepRange(e.reps);
+      const allHitTop = prevSets.every(s => s >= topOfRange);
+      const misses = prevSets.filter(s => s < bottomOfRange).length;
+      if (allHitTop) {
+        prompts.push({ name: e.name, currentWeight: e.w, suggestion: 'up', lastSets: prevSets, repRange: e.reps, topOfRange, bottomOfRange, adjustment: null });
+      } else if (misses >= 2) {
+        prompts.push({ name: e.name, currentWeight: e.w, suggestion: 'down', lastSets: prevSets, repRange: e.reps, topOfRange, bottomOfRange, adjustment: null });
+      }
+    });
+    return prompts;
+  };
+  const handleDayClick = (day) => {
+    const prompts = checkAccessoryProgression(day);
+    if (prompts.length > 0) {
+      setAccProgressData({ day, prompts });
+      return;
+    }
+    startDay(day);
+  };
+  const setAccDecision = (idx, adj) => {
+    setAccProgressData(prev => {
+      const prompts = prev.prompts.map((p, i) => i === idx ? { ...p, adjustment: adj } : p);
+      return { ...prev, prompts };
+    });
+  };
+  const confirmProgression = () => {
+    const { day, prompts } = accProgressData;
+    const newAccWeights = { ...accWeights };
+    const adjustments = {};
+    const dayData = wd.days[day];
+    prompts.forEach(p => {
+      const adj = p.adjustment || 0;
+      adjustments[p.name] = adj;
+      if (adj !== 0) {
+        const exData = dayData.ex.find(e => e.name === p.name);
+        const accKey = p.name + " " + (exData ? exData.reps : p.repRange);
+        if (typeof newAccWeights[accKey] === 'number') {
+          newAccWeights[accKey] += adj;
+        } else if (typeof newAccWeights[p.name] === 'number') {
+          newAccWeights[p.name] += adj;
+        }
+      }
+    });
+    setAccWeights(newAccWeights);
+    setWorkout({
+      week, day, title: dayData.title, date: new Date().toISOString(),
+      ex: dayData.ex.map(e => {
+        const adj = adjustments[e.name] || 0;
+        const w = typeof e.w === 'number' ? e.w + adj : e.w;
+        return { ...e, cw: w, sets: Array(e.sets).fill(null), notes: '', done: false, sugg: null };
+      })
+    });
+    setAccProgressData(null);
+    setEi(0); setModal(null); setShowQuote(true);
+    const firstEx = dayData.ex[0];
+    const initialPreset = firstEx.prim ? 5 : 2;
+    setPreset(initialPreset);
+    setTimerEndTime(null);
+    requestWakeLock();
+  };
+  const skipProgression = () => {
+    const { day } = accProgressData;
+    setAccProgressData(null);
+    startDay(day);
+  };
   const ex=workout?workout.ex[ei]:null;
-
   const updSet=(si,val)=>{
     const w={...workout}; const e=w.ex[ei];
     e.sets[si]=val!==''?parseInt(val):null;
-
     // Progression only during normal weeks
     if (!wd.isDeload && !wd.isTest) {
       if (typeof e.reps === 'string' && e.reps.includes('-')) {
@@ -803,7 +878,6 @@ function App() {
         else e.sugg = fails >= 3 ? 'down' : null;
       }
     }
-
     // Auto-save 1RM for strength test
     if (e.test && si === 0 && val !== '' && parseInt(val) > 0) {
       const new1RM = calcRM(e.cw, parseInt(val));
@@ -813,7 +887,6 @@ function App() {
         setSaved1RMs(updated);
       }
     }
-
     setWorkout(w);
     if(val!==''&&si<e.sets.length-1){
       const rest=e.prim?wd.rP:wd.rA;
@@ -821,7 +894,6 @@ function App() {
       startTimer(rest);
     }
   };
-
   const adjW=d=>{
     const w={...workout};
     const e=w.ex[ei];
@@ -838,18 +910,15 @@ function App() {
   
   const togDone=()=>{const w={...workout};w.ex[ei].done=!w.ex[ei].done;setWorkout(w);};
   const updNotes=v=>{const w={...workout};w.ex[ei].notes=v;setWorkout(w);};
-
   const saveWorkout=async ()=>{
     // Celebration
     const emoji = CELEBRATION_EMOJIS[Math.floor(Math.random()*CELEBRATION_EMOJIS.length)];
     const text = CELEBRATION_TEXTS[Math.floor(Math.random()*CELEBRATION_TEXTS.length)];
     setCelebration({ emoji, text });
     launchConfetti();
-
     setTimeout(async () => {
       const newHistory = [...history, workout];
       setHistory(newHistory);
-
       // Auto-generate next cycle when strength test is fully complete
       if (cycles.length > 0) {
         const curWd = allWeeks[workout.week];
@@ -866,7 +935,6 @@ function App() {
           }
         }
       }
-
       // Google Sheets sync
       if (sheetsUrl) {
         setToast({ msg: 'Syncing to Sheets...', type: '' });
@@ -879,10 +947,8 @@ function App() {
       releaseWakeLock();
     }, 3000);
   };
-
   const abandon=()=>{setWorkout(null);setEi(0);setTimerEndTime(null);setModal(null);releaseWakeLock();};
   const delHist=i=>setHistory(h=>h.filter((_,j)=>j!==i));
-
   const exportCSV=()=>{
     if(!history.length)return;
     let csv='Date,Week,Day,Exercise,Weight,Set1,Set2,Set3,Set4,Notes\n';
@@ -899,7 +965,45 @@ function App() {
     });
     a.click();
   };
-
+  // ── Full Backup Export/Import ──────────────────────────────────
+  const exportBackup = () => {
+    const backup = {};
+    const keys = ['wh','saved1RMs','bblsCycles','accWeights','currentWeek','sheetsUrl','userPin'];
+    keys.forEach(k => { const v = localStorage.getItem(k); if (v !== null) backup[k] = v; });
+    backup._exportDate = new Date().toISOString();
+    backup._version = 'bbls-backup-v1';
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })),
+      download: `bbls-backup-${new Date().toISOString().slice(0,10)}.json`
+    });
+    a.click();
+    setToast({ msg: '\u2713 Backup exported', type: 'ok' });
+  };
+  const importBackup = () => {
+    const input = Object.assign(document.createElement('input'), { type: 'file', accept: '.json' });
+    input.onchange = e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (data._version !== 'bbls-backup-v1') {
+            setToast({ msg: '\u2717 Invalid backup file', type: 'err' });
+            return;
+          }
+          const keys = ['wh','saved1RMs','bblsCycles','accWeights','currentWeek','sheetsUrl','userPin'];
+          keys.forEach(k => { if (data[k] !== undefined) localStorage.setItem(k, data[k]); });
+          setToast({ msg: '\u2713 Backup restored! Reloading...', type: 'ok' });
+          setTimeout(() => window.location.reload(), 1500);
+        } catch (err) {
+          setToast({ msg: '\u2717 Failed to read backup', type: 'err' });
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
   // Progress summary data
   const getLast4Weeks = () => {
     const weeks = {};
@@ -909,9 +1013,7 @@ function App() {
     });
     return Object.entries(weeks).sort((a,b)=>b[0]-a[0]).slice(0, 4);
   };
-
   if(!unlocked) return <PinScreen onUnlock={()=>setUnlocked(true)}/>;
-
   // ── Celebration Overlay ─────────────────────────────────────
   if (celebration) {
     return (
@@ -922,7 +1024,46 @@ function App() {
       </div>
     );
   }
-
+  // ── Accessory Progression Prompts ──────────────────────────────
+  if (accProgressData) {
+    return (
+      <div>
+        <div className="hdr">
+          <div className="hdr-t">Weight Check</div>
+          <div className="hdr-s">Based on last week's performance</div>
+        </div>
+        <div className="wrap" style={{paddingTop:20}}>
+          {accProgressData.prompts.map((p, idx) => (
+            <div key={p.name} className={`prog-prompt ${p.suggestion==='up'?'up':'dn'}`}>
+              <div className="prog-prompt-name">{p.name}</div>
+              <div className="prog-prompt-info">
+                Current: {p.currentWeight} lbs &middot; Last week: {p.lastSets.join(', ')} reps
+                {p.suggestion === 'up'
+                  ? ` \u00b7 Hit ${p.topOfRange}+ on all sets \u2713`
+                  : ` \u00b7 Missed ${p.bottomOfRange} reps on ${p.lastSets.filter(s => s < p.bottomOfRange).length} sets`}
+              </div>
+              <div className="prog-prompt-btns">
+                {p.suggestion === 'up' ? (
+                  <>
+                    <button className={`prog-prompt-btn${p.adjustment===5?' sel':''}`} onClick={()=>setAccDecision(idx,5)}>+5 lbs</button>
+                    <button className={`prog-prompt-btn${p.adjustment===10?' sel':''}`} onClick={()=>setAccDecision(idx,10)}>+10 lbs</button>
+                  </>
+                ) : (
+                  <>
+                    <button className={`prog-prompt-btn${p.adjustment===-5?' sel':''}`} onClick={()=>setAccDecision(idx,-5)}>-5 lbs</button>
+                    <button className={`prog-prompt-btn${p.adjustment===-10?' sel':''}`} onClick={()=>setAccDecision(idx,-10)}>-10 lbs</button>
+                  </>
+                )}
+                <button className={`prog-prompt-btn keep${p.adjustment===0?' sel':''}`} onClick={()=>setAccDecision(idx,0)}>Keep Same</button>
+              </div>
+            </div>
+          ))}
+          <button className="btn bok" style={{marginTop:16}} onClick={confirmProgression}>{'\u2713'} Start Workout</button>
+          <button className="btn bsc" onClick={skipProgression}>Skip All</button>
+        </div>
+      </div>
+    );
+  }
   // ── Save Confirmation ─────────────────────────────────────────
   if(modal==='save'&&workout){
     return(
@@ -971,7 +1112,6 @@ function App() {
       </div>
     );
   }
-
   // ── Home / Day Selector ───────────────────────────────────────
   if(!workout){
     const weekKeys = Object.keys(allWeeks).map(Number).sort((a,b)=>a-b);
@@ -994,7 +1134,7 @@ function App() {
             {Object.entries(wd.days).map(([d,data])=>{
               const done=doneDays.includes(parseInt(d));
               return(
-                <button key={d} className="daybtn" onClick={()=>startDay(parseInt(d))}>
+                <button key={d} className="daybtn" onClick={()=>handleDayClick(parseInt(d))}>
                   <div>
                     <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:1}}>
                       Day {d}: {data.title}
@@ -1092,12 +1232,20 @@ function App() {
                 } catch(e) { setToast({msg:'\u2717 Connection failed',type:'err'}); }
               }}>Test Connection</button>
             )}
+            <div style={{borderTop:'1px solid var(--bdr)',marginTop:16,paddingTop:16}}>
+              <div className="wlbl" style={{marginBottom:10}}>Backup &amp; Restore</div>
+              <div style={{display:'flex',gap:10}}>
+                <button className="btn bpr" style={{flex:1,marginBottom:0}} onClick={exportBackup}>{'\u2B07'} Export Backup</button>
+                <button className="btn bsc" style={{flex:1,marginBottom:0}} onClick={importBackup}>{'\u2B06'} Import Backup</button>
+              </div>
+              <div style={{color:'var(--dim)',fontSize:11,marginTop:8,textAlign:'center'}}>
+                Export saves all data (workouts, weights, cycles, settings) as a JSON file
+              </div>
+            </div>
           </div>
         </div>
-
         {/* Toast */}
         {toast && <div className={`toast ${toast.type}`}>{toast.msg}</div>}
-
         {/* Week Selector */}
         <div className={`modal${modal==='week'?' open':''}`}>
           <div className="mbox">
@@ -1127,7 +1275,6 @@ function App() {
             <button className="btn bsc" onClick={()=>setModal(null)}>Cancel</button>
           </div>
         </div>
-
         {/* Dashboard */}
         <div className={`modal${modal==='dash'?' open':''}`}>
           <div className="mbox">
@@ -1141,7 +1288,6 @@ function App() {
             <button className="btn bsc" style={{marginTop:20}} onClick={()=>setModal(null)}>Close</button>
           </div>
         </div>
-
         {/* Progress / Last 4 Weeks */}
         <div className={`modal${modal==='progress'?' open':''}`}>
           <div className="mbox">
@@ -1200,7 +1346,6 @@ function App() {
             <button className="btn bsc" style={{marginTop:10}} onClick={()=>setModal(null)}>Close</button>
           </div>
         </div>
-
         {/* History */}
         <div className={`modal${modal==='hist'?' open':''}`}>
           <div className="mbox">
@@ -1242,7 +1387,6 @@ function App() {
       </div>
     );
   }
-
   // ── Active Workout ─────────────────────────────────────────────
   let tgtMin, tgtMax;
   if (typeof ex.reps === 'string' && ex.reps.includes('-')) {
@@ -1258,7 +1402,6 @@ function App() {
   const poss=workout.ex.reduce((a,e)=>a+e.sets.length,0);
   
   const ticking = timerEndTime !== null;
-
   return(
     <div>
       <div className="hdr">
@@ -1372,10 +1515,8 @@ function App() {
     </div>
   );
 }
-
 // React 18 createRoot
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-
 // Service Worker registration
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(()=>{});
