@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BBLS Data Restore</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#0a0a0a; color:#fff; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+    .logo { font-size:36px; font-weight:bold; color:#FF4500; letter-spacing:3px; margin-bottom:8px; }
+    .sub { color:#888; font-size:13px; margin-bottom:40px; }
+    .card { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; padding:24px; max-width:400px; width:100%; }
+    .title { color:#FF4500; font-size:20px; font-weight:bold; text-align:center; margin-bottom:20px; }
+    .info { color:#888; font-size:13px; line-height:1.6; margin-bottom:20px; }
+    .info strong { color:#fff; }
+    .btn { width:100%; padding:16px; border-radius:10px; border:none; font-size:16px; font-weight:bold; cursor:pointer; margin-bottom:12px; transition:all .2s; }
+    .btn:active { transform:scale(.97); }
+    .btn-restore { background:#FF4500; color:#fff; }
+    .btn-back { background:#111; color:#888; border:1px solid #2a2a2a; }
+    .status { text-align:center; padding:12px; border-radius:8px; margin-top:12px; font-size:14px; display:none; }
+    .status.ok { display:block; background:rgba(0,230,118,.15); border:1px solid #00e676; color:#00e676; }
+    .status.err { display:block; background:rgba(255,23,68,.15); border:1px solid #ff1744; color:#ff1744; }
+    .warn { color:#ffaa00; font-size:12px; text-align:center; margin-top:12px; }
+  </style>
+</head>
+<body>
+  <div class="logo">BBLS</div>
+  <div class="sub">DATA RESTORE</div>
+  <div class="card">
+    <div class="title">Restore Workout Data</div>
+    <div class="info">
+      This will restore:<br>
+      <strong>16 workouts</strong> (Weeks 29-32)<br>
+      <strong>7 primary 1RMs</strong><br>
+      <strong>13 accessory weights</strong><br>
+      <strong>1 generated cycle</strong> (Weeks 30-45)<br>
+      Current week set to <strong>32</strong>
+    </div>
+    <button class="btn btn-restore" onclick="restoreData()">Restore All Data</button>
+    <button class="btn btn-back" onclick="window.location.href='index.html'">Back to App</button>
+    <div id="status" class="status"></div>
+    <div class="warn">This will overwrite any existing data in the app.</div>
+  </div>
+
+<script>
+function restoreData() {
+  try {
+    // Week 29 - Strength Test, Feb 23-27
+    var w29 = [
+      {week:29,day:1,title:"Chest Test",date:"2026-02-23T12:00:00.000Z",ex:[
+        {name:"Bench Press",cw:282,bar:45,sets:[5,5],reps:"AMRAP",prim:true,test:true,rm:297,done:true,notes:"",sugg:null},
+        {name:"Close Grip Bench",cw:242,bar:45,sets:[7,7],reps:"AMRAP",prim:true,test:true,rm:255,done:true,notes:"",sugg:null},
+        {name:"Machine Side Raise",cw:145,sets:[8,8],reps:8,prim:false,done:true,notes:"",sugg:null},
+        {name:"Tricep Rope PD",cw:87.5,sets:[6,6],reps:8,prim:false,done:true,notes:"",sugg:null}
+      ]},
+      {week:29,day:2,title:"Back Test",date:"2026-02-24T12:00:00.000Z",ex:[
+        {name:"Deadlift",cw:324,bar:50,sets:[5,5],reps:"AMRAP",prim:true,test:true,rm:341,done:true,notes:"",sugg:null},
+        {name:"Pull Ups",cw:"BW",sets:[5,4],reps:8,prim:false,done:true,notes:"",sugg:null},
+        {name:"One Arm DB Row",cw:110,sets:[8,8],reps:8,prim:false,done:true,notes:"",sugg:null},
+        {name:"Seated Calf Raise",cw:190,sets:[8,8],reps:8,prim:false,done:true,notes:"",sugg:null}
+      ]},
+      {week:29,day:3,title:"Shoulders Test",date:"2026-02-25T12:00:00.000Z",ex:[
+        {name:"Military Press",cw:183,bar:45,sets:[6,6],reps:"AMRAP",prim:true,test:true,rm:193,done:true,notes:"",sugg:null},
+        {name:"DB Curls",cw:55,sets:[8,8],reps:8,prim:false,done:true,notes:"",sugg:null},
+        {name:"Machine Side Raise",cw:145,sets:[8,8],reps:8,prim:false,done:true,notes:"",sugg:null}
+      ]},
+      {week:29,day:4,title:"Legs Test",date:"2026-02-26T12:00:00.000Z",ex:[
+        {name:"Barbell Squat",cw:174,bar:45,sets:[8,8],reps:"AMRAP",prim:true,test:true,rm:183,done:true,notes:"",sugg:null},
+        {name:"Leg Press",cw:448,bar:0,sets:[8,8],reps:"AMRAP",prim:true,test:true,rm:472,done:true,notes:"",sugg:null},
+        {name:"Leg Curl Lying",cw:135,sets:[8,8],reps:8,prim:false,done:true,notes:"",sugg:null},
+        {name:"Standing Calf Raise",cw:380,sets:[8,8],reps:8,prim:false,done:true,notes:"",sugg:null}
+      ]},
+      {week:29,day:5,title:"Chest Test 2",date:"2026-02-27T12:00:00.000Z",ex:[
+        {name:"Incline Bench",cw:239,bar:45,sets:[5,5],reps:"AMRAP",prim:true,test:true,rm:252,done:true,notes:"",sugg:null},
+        {name:"Seated Cable Row",cw:185,sets:[8,8],reps:8,prim:false,done:true,notes:"",sugg:null},
+        {name:"Barbell Curl",cw:100,sets:[8,8],reps:8,prim:false,done:true,notes:"",sugg:null}
+      ]}
+    ];
+
+    // Week 30 - Meso 1 Wk 1, Mar 9-13
+    var w30 = [
+      {week:30,day:1,title:"Chest & Triceps",date:"2026-03-09T12:00:00.000Z",ex:[
+        {name:"Bench Press",cw:230,bar:45,sets:[10,10,9,7],reps:10,prim:true,done:true,notes:"",sugg:null},
+        {name:"Close Grip Bench",cw:210,bar:45,sets:[9,7,8,7],reps:10,prim:true,done:true,notes:"",sugg:null},
+        {name:"Machine Side Raise",cw:145,sets:[10,7,7],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"Tricep Rope PD",cw:72.5,sets:[10,10,8],reps:"10-12",prim:false,done:true,notes:"",sugg:null}
+      ]},
+      {week:30,day:2,title:"Back & Calves",date:"2026-03-10T12:00:00.000Z",ex:[
+        {name:"Deadlift",cw:265,bar:50,sets:[10,10,10,10],reps:10,prim:true,done:true,notes:"",sugg:null},
+        {name:"Pull Ups",cw:"BW",sets:[8,7,6,6],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"One Arm DB Row",cw:110,sets:[10,9,8,8],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"Seated Calf Raise",cw:190,sets:[10,10,10,10],reps:"10-12",prim:false,done:true,notes:"",sugg:null}
+      ]},
+      {week:30,day:3,title:"Shoulders & Biceps",date:"2026-03-11T12:00:00.000Z",ex:[
+        {name:"Military Press",cw:145,bar:45,sets:[10,10,10,7],reps:10,prim:true,done:true,notes:"",sugg:null},
+        {name:"Machine Rear Delt Fly",cw:215,bar:0,sets:[10,10,10,10],reps:10,prim:true,done:true,notes:"",sugg:null},
+        {name:"DB Curls",cw:45,sets:[7,8,8,9],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"Machine Side Raise",cw:145,sets:[10,8,6,6],reps:"10-12",prim:false,done:true,notes:"",sugg:null}
+      ]},
+      {week:30,day:4,title:"Legs",date:"2026-03-12T12:00:00.000Z",ex:[
+        {name:"Barbell Squat",cw:155,bar:45,sets:[10,10,10,4],reps:10,prim:true,done:true,notes:"",sugg:null},
+        {name:"Leg Press",cw:395,bar:0,sets:[10,10,10,10],reps:10,prim:true,done:true,notes:"",sugg:null},
+        {name:"Leg Curl Lying",cw:135,sets:[10,10,8,7],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"Standing Calf Raise",cw:380,sets:[12,12,11,10],reps:"10-12",prim:false,done:true,notes:"",sugg:null}
+      ]},
+      {week:30,day:5,title:"Chest & Back",date:"2026-03-13T12:00:00.000Z",ex:[
+        {name:"Incline Bench",cw:195,bar:45,sets:[10,10,10,10],reps:10,prim:true,done:true,notes:"",sugg:null},
+        {name:"Flat Bench",cw:230,bar:45,sets:[10,9,8,8],reps:10,prim:true,done:true,notes:"",sugg:null},
+        {name:"Seated Cable Row",cw:180,sets:[8,10,10,10],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"Barbell Curl",cw:100,sets:[10,10,10,10],reps:"10-12",prim:false,done:true,notes:"",sugg:null}
+      ]}
+    ];
+
+    // Week 31 - Meso 1 Wk 2, Mar 16-20
+    var w31 = [
+      {week:31,day:1,title:"Chest & Triceps",date:"2026-03-16T12:00:00.000Z",ex:[
+        {name:"Bench Press",cw:245,bar:45,sets:[8,8,8,8],reps:8,prim:true,done:true,notes:"",sugg:null},
+        {name:"Close Grip Bench",cw:225,bar:45,sets:[8,8,8,8],reps:8,prim:true,done:true,notes:"",sugg:null},
+        {name:"Machine Side Raise",cw:145,sets:[10,10,10,4],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"Tricep Rope PD",cw:77.5,sets:[10,10,7,8],reps:"10-12",prim:false,done:true,notes:"",sugg:null}
+      ]},
+      {week:31,day:2,title:"Back & Calves",date:"2026-03-17T12:00:00.000Z",ex:[
+        {name:"Deadlift",cw:285,bar:50,sets:[8,8,8,8],reps:8,prim:true,done:true,notes:"",sugg:null},
+        {name:"Pull Ups",cw:"BW",sets:[8,8,6,8],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"One Arm DB Row",cw:110,sets:[10,10,10,6],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"Seated Calf Raise",cw:190,sets:[10,10,8,8],reps:"10-12",prim:false,done:true,notes:"",sugg:null}
+      ]},
+      {week:31,day:3,title:"Shoulders & Biceps",date:"2026-03-18T12:00:00.000Z",ex:[
+        {name:"Military Press",cw:165,bar:45,sets:[8,8,8,8],reps:8,prim:true,done:true,notes:"",sugg:null},
+        {name:"Machine Rear Delt Fly",cw:160,bar:0,sets:[8,8,8,8],reps:8,prim:true,done:true,notes:"",sugg:null},
+        {name:"DB Curls",cw:45,sets:[8,8,10,10],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"Machine Side Raise",cw:145,sets:[10,10,6,6],reps:"10-12",prim:false,done:true,notes:"",sugg:null}
+      ]},
+      {week:31,day:4,title:"Legs",date:"2026-03-19T12:00:00.000Z",ex:[
+        {name:"Barbell Squat",cw:165,bar:45,sets:[8,8,8,8],reps:8,prim:true,done:true,notes:"",sugg:null},
+        {name:"Leg Press",cw:425,bar:0,sets:[8,8,8,8],reps:8,prim:true,done:true,notes:"",sugg:null},
+        {name:"Leg Curl Lying",cw:120,sets:[8,10,8,8],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"Standing Calf Raise",cw:380,sets:[12,12,12,9],reps:"10-12",prim:false,done:true,notes:"",sugg:null}
+      ]},
+      {week:31,day:5,title:"Chest & Back",date:"2026-03-20T12:00:00.000Z",ex:[
+        {name:"Incline Bench",cw:210,bar:45,sets:[8,8,8,8],reps:8,prim:true,done:true,notes:"",sugg:null},
+        {name:"Flat Bench",cw:245,bar:45,sets:[8,6,6,5],reps:8,prim:true,done:true,notes:"",sugg:null},
+        {name:"Seated Cable Row",cw:185,sets:[8,8,8,8],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"Barbell Curl",cw:100,sets:[10,10,9,7],reps:"10-12",prim:false,done:true,notes:"",sugg:null}
+      ]}
+    ];
+
+    // Week 32 - Meso 1 Wk 3, Mar 23 (Day 1 only)
+    var w32 = [
+      {week:32,day:1,title:"Chest & Triceps",date:"2026-03-23T12:00:00.000Z",ex:[
+        {name:"Bench Press",cw:265,bar:45,sets:[6,6,6,6],reps:6,prim:true,done:true,notes:"",sugg:null},
+        {name:"Close Grip Bench",cw:240,bar:45,sets:[6,6,6,5],reps:6,prim:true,done:true,notes:"",sugg:null},
+        {name:"Machine Side Raise",cw:145,sets:[10,10,10,10],reps:"10-12",prim:false,done:true,notes:"",sugg:null},
+        {name:"Tricep Rope PD",cw:72.5,sets:[12,10,10,9],reps:"10-12",prim:false,done:true,notes:"",sugg:null}
+      ]}
+    ];
+
+    var allHistory = w29.concat(w30).concat(w31).concat(w32);
+
+    // 1RMs
+    var oneRMs = {
+      "Bench Press": 329,
+      "Close Grip Bench": 298,
+      "Deadlift": 378,
+      "Military Press": 220,
+      "Barbell Squat": 220,
+      "Leg Press": 567,
+      "Incline Bench": 279
+    };
+
+    // Accessory weights
+    var accW = {
+      "Machine Side Raise": 145,
+      "Tricep Rope PD": 72.5,
+      "Pull Ups": "BW",
+      "One Arm DB Row": 110,
+      "Seated Calf Raise": 190,
+      "DB Curls": 45,
+      "Leg Curl Lying": 135,
+      "Standing Calf Raise": 380,
+      "Seated Cable Row": 185,
+      "Barbell Curl": 100,
+      "Seated Cable Row 10-12": 180,
+      "Tricep Rope PD 10-12": 72.5,
+      "DB Curls 10-12": 45
+    };
+
+    // Cycle
+    var cycles = [{ startWeek: 30, oneRMs: oneRMs, accWeights: accW }];
+
+    // Write everything
+    localStorage.setItem('wh', JSON.stringify(allHistory));
+    localStorage.setItem('saved1RMs', JSON.stringify(oneRMs));
+    localStorage.setItem('accWeights', JSON.stringify(accW));
+    localStorage.setItem('bblsCycles', JSON.stringify(cycles));
+    localStorage.setItem('currentWeek', '32');
+
+    var el = document.getElementById('status');
+    el.className = 'status ok';
+    el.textContent = 'Restored ' + allHistory.length + ' workouts! Redirecting to app...';
+    setTimeout(function() { window.location.href = 'index.html'; }, 2000);
+
+  } catch(e) {
+    var el = document.getElementById('status');
+    el.className = 'status err';
+    el.textContent = 'Error: ' + e.message;
+  }
+}
+</script>
+</body>
+</html>
