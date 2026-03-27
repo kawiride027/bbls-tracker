@@ -82,6 +82,16 @@
     .btn-email{background:var(--surf2);border:1px solid var(--bdr)!important;color:var(--txt)}
     .btn-copy{background:rgba(13,148,136,.15);color:var(--pri)}
 
+    /* Thumbnail */
+    .thumb-wrap{margin-top:16px;display:none}
+    .thumb-wrap.show{display:block}
+    .thumb-title{font-size:13px;font-weight:600;color:var(--pri);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+    .thumb-canvas{width:100%;border-radius:8px;border:1px solid var(--bdr)}
+    .thumb-actions{display:flex;gap:8px;margin-top:10px}
+    .thumb-actions button{flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+    .btn-download{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff}
+    .btn-share{background:var(--surf2);border:1px solid var(--bdr)!important;color:var(--txt)}
+
     /* Settings overlay */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:flex-end;justify-content:center}
     .overlay.show{display:flex}
@@ -286,6 +296,15 @@
           <button class="btn-email" id="emailCaption">📧 Email Draft</button>
         </div>`:''}
 
+        <div class="thumb-wrap ${aiCaption&&videoFile?'show':''}" id="thumbWrap">
+          <div class="thumb-title">Branded Thumbnail</div>
+          <canvas class="thumb-canvas" id="thumbCanvas"></canvas>
+          <div class="thumb-actions">
+            <button class="btn-download" id="downloadThumb">💾 Save Image</button>
+            <button class="btn-share" id="shareThumb">📤 Share</button>
+          </div>
+        </div>
+
         <div class="reset-row">
           <button class="reset-link" id="resetForm">Reset Form</button>
         </div>
@@ -379,6 +398,33 @@
     // Email caption
     if(document.getElementById('emailCaption')){
       document.getElementById('emailCaption').addEventListener('click', handleEmailDraft);
+    }
+
+    // Thumbnail
+    if(aiCaption && videoFile){
+      generateThumbnail();
+    }
+    if(document.getElementById('downloadThumb')){
+      document.getElementById('downloadThumb').addEventListener('click', function(){
+        var canvas = document.getElementById('thumbCanvas');
+        var link = document.createElement('a');
+        link.download = 'job-thumbnail-' + Date.now() + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+    if(document.getElementById('shareThumb')){
+      document.getElementById('shareThumb').addEventListener('click', function(){
+        var canvas = document.getElementById('thumbCanvas');
+        canvas.toBlob(function(blob){
+          if(navigator.share){
+            var file = new File([blob], 'job-thumbnail.png', {type:'image/png'});
+            navigator.share({files:[file], title:'Job Site Thumbnail'}).catch(function(){});
+          } else {
+            showStatus('Share not supported on this browser. Use Save Image instead.', 'info');
+          }
+        });
+      });
     }
 
     // Reset
@@ -566,6 +612,146 @@
       '— Job Video Post App'
     );
     window.location.href = 'mailto:' + to + '?subject=' + subject + '&body=' + body;
+  }
+
+  // ─── Branded Thumbnail Generator ───
+  function generateThumbnail(){
+    var canvas = document.getElementById('thumbCanvas');
+    if(!canvas || !videoFile) return;
+    var ctx = canvas.getContext('2d');
+    var W = 1080, H = 1080;
+    canvas.width = W;
+    canvas.height = H;
+
+    // Grab a frame from the video
+    var video = document.createElement('video');
+    video.muted = true;
+    video.playsInline = true;
+    video.src = URL.createObjectURL(videoFile);
+
+    video.addEventListener('loadeddata', function(){
+      video.currentTime = Math.min(1, video.duration * 0.25);
+    });
+
+    video.addEventListener('seeked', function(){
+      // Draw video frame (cover crop to square)
+      var vw = video.videoWidth, vh = video.videoHeight;
+      var scale = Math.max(W/vw, H/vh);
+      var sw = W/scale, sh = H/scale;
+      var sx = (vw-sw)/2, sy = (vh-sh)/2;
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
+
+      // Dark gradient overlay (bottom 55%)
+      var grad = ctx.createLinearGradient(0, H*0.35, 0, H);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(0.3, 'rgba(0,0,0,0.6)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.92)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Top gradient overlay for logo area
+      var topGrad = ctx.createLinearGradient(0, 0, 0, H*0.2);
+      topGrad.addColorStop(0, 'rgba(0,0,0,0.7)');
+      topGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = topGrad;
+      ctx.fillRect(0, 0, W, H*0.25);
+
+      // Accent bar at top
+      ctx.fillStyle = '#0d9488';
+      ctx.fillRect(0, 0, W, 6);
+
+      // Business name (top left)
+      var bizName = (settings.businessName || 'Fence Services').toUpperCase();
+      ctx.font = 'bold 36px Inter, system-ui, sans-serif';
+      ctx.fillStyle = '#0d9488';
+      ctx.textAlign = 'left';
+      ctx.fillText(bizName, 48, 60);
+
+      // Job type badge
+      var jobLabel = '';
+      JOB_TYPES.forEach(function(j){ if(j.id === selectedJob) jobLabel = j.label; });
+      if(jobLabel){
+        ctx.font = 'bold 28px Inter, system-ui, sans-serif';
+        var badgeText = jobLabel.toUpperCase();
+        var tw = ctx.measureText(badgeText).width;
+        var bx = 48, by = H - 280;
+        // Badge background
+        ctx.fillStyle = '#0d9488';
+        roundRect(ctx, bx, by - 30, tw + 32, 44, 8);
+        ctx.fill();
+        // Badge text
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.fillText(badgeText, bx + 16, by + 4);
+      }
+
+      // AI Caption (first 2-3 lines)
+      if(aiCaption){
+        var captionLines = wrapText(ctx, getFirstSentences(aiCaption, 2), W - 96, 'bold 30px Inter, system-ui, sans-serif');
+        ctx.font = 'bold 30px Inter, system-ui, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        var startY = H - 180;
+        captionLines.forEach(function(line, i){
+          ctx.fillText(line, 48, startY + (i * 42));
+        });
+
+        // Hashtags line
+        var hashtags = extractHashtags(aiCaption);
+        if(hashtags){
+          ctx.font = '22px Inter, system-ui, sans-serif';
+          ctx.fillStyle = '#0d9488';
+          ctx.fillText(hashtags.substring(0, 60), 48, H - 48);
+        }
+      }
+
+      // Accent bar at bottom
+      ctx.fillStyle = '#0d9488';
+      ctx.fillRect(0, H - 6, W, 6);
+
+      URL.revokeObjectURL(video.src);
+    });
+  }
+
+  function roundRect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+
+  function wrapText(ctx, text, maxW, font){
+    ctx.font = font;
+    var words = text.split(' '), lines = [], line = '';
+    words.forEach(function(w){
+      var test = line ? line + ' ' + w : w;
+      if(ctx.measureText(test).width > maxW && line){
+        lines.push(line);
+        line = w;
+      } else {
+        line = test;
+      }
+    });
+    if(line) lines.push(line);
+    return lines.slice(0, 3);
+  }
+
+  function getFirstSentences(text, count){
+    var clean = text.replace(/#\S+/g, '').trim();
+    var sentences = clean.match(/[^.!?\n]+[.!?]*/g) || [clean];
+    return sentences.slice(0, count).join(' ').trim();
+  }
+
+  function extractHashtags(text){
+    var tags = text.match(/#\S+/g);
+    return tags ? tags.slice(0, 5).join(' ') : '';
   }
 
   // ─── Helpers ───
