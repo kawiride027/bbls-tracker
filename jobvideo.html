@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d9488">
+  <title>Job Video Post</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    :root{
+      --pri:#0d9488;--pri2:#0f766e;--bg:#0a0f1a;--surf:#111827;--surf2:#1f2937;
+      --txt:#f9fafb;--dim:#9ca3af;--green:#10b981;--red:#ef4444;--warn:#f59e0b;
+      --bdr:#374151;--radius:12px;
+    }
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;min-height:100dvh;overflow-x:hidden}
+
+    /* Header */
+    .header{background:linear-gradient(135deg,var(--pri),var(--pri2));padding:16px 20px;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(13,148,136,.3)}
+    .header h1{font-size:20px;font-weight:700;letter-spacing:.5px}
+    .header-sub{font-size:11px;opacity:.8;margin-top:2px;letter-spacing:.5px}
+    .settings-btn{position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+    /* Container */
+    .container{max-width:480px;margin:0 auto;padding:16px}
+
+    /* Cards */
+    .card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+    .card-title{font-size:13px;font-weight:600;color:var(--pri);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+
+    /* Video capture */
+    .video-zone{border:2px dashed var(--bdr);border-radius:var(--radius);padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s}
+    .video-zone:active{border-color:var(--pri);background:rgba(13,148,136,.05)}
+    .video-zone.has-file{border-color:var(--green);background:rgba(16,185,129,.05)}
+    .video-icon{font-size:48px;margin-bottom:12px;display:block}
+    .video-label{font-size:15px;font-weight:600;margin-bottom:4px}
+    .video-hint{font-size:12px;color:var(--dim)}
+    .video-filename{font-size:13px;color:var(--green);margin-top:8px;font-weight:500;word-break:break-all}
+    .video-preview{width:100%;max-height:240px;border-radius:8px;margin-top:12px;object-fit:cover;background:#000}
+    #videoInput{display:none}
+
+    /* Job type buttons */
+    .job-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .job-btn{background:var(--surf2);border:2px solid var(--bdr);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;font-size:13px;font-weight:500;color:var(--txt)}
+    .job-btn:active{transform:scale(.96)}
+    .job-btn.selected{border-color:var(--pri);background:rgba(13,148,136,.15);color:var(--pri)}
+    .job-emoji{font-size:24px;display:block;margin-bottom:6px}
+
+    /* Inputs */
+    .input-field{width:100%;background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:12px 14px;color:var(--txt);font-size:14px;font-family:inherit;resize:vertical;min-height:44px}
+    .input-field:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(13,148,136,.15)}
+    .input-field::placeholder{color:var(--dim)}
+    label{display:block;font-size:12px;color:var(--dim);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+
+    /* Send button */
+    .send-btn{width:100%;padding:16px;border:none;border-radius:var(--radius);font-size:16px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:8px}
+    .send-btn:active{transform:scale(.98)}
+    .send-btn.primary{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;box-shadow:0 4px 15px rgba(13,148,136,.3)}
+    .send-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+    /* Progress */
+    .progress-wrap{margin-top:12px;display:none}
+    .progress-wrap.show{display:block}
+    .progress-bar{height:6px;background:var(--surf2);border-radius:3px;overflow:hidden}
+    .progress-fill{height:100%;background:var(--pri);border-radius:3px;transition:width .3s;width:0%}
+    .progress-text{font-size:12px;color:var(--dim);margin-top:6px;text-align:center}
+
+    /* Status messages */
+    .status{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:12px;display:none;line-height:1.5}
+    .status.show{display:block}
+    .status.success{background:rgba(16,185,129,.12);border:1px solid var(--green);color:var(--green)}
+    .status.error{background:rgba(239,68,68,.12);border:1px solid var(--red);color:var(--red)}
+    .status.info{background:rgba(13,148,136,.12);border:1px solid var(--pri);color:var(--pri)}
+
+    /* AI Caption Preview */
+    .caption-preview{background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:14px;margin-top:12px;display:none;white-space:pre-wrap;font-size:13px;line-height:1.6;color:var(--txt)}
+    .caption-preview.show{display:block}
+    .caption-actions{display:flex;gap:8px;margin-top:10px}
+    .caption-actions button{flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+    .btn-email{background:var(--surf2);border:1px solid var(--bdr)!important;color:var(--txt)}
+    .btn-copy{background:rgba(13,148,136,.15);color:var(--pri)}
+
+    /* Settings overlay */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:flex-end;justify-content:center}
+    .overlay.show{display:flex}
+    .settings-panel{background:var(--surf);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;padding:24px 20px 40px;animation:slideUp .3s ease}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .settings-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+    .settings-header h2{font-size:18px;font-weight:700}
+    .close-btn{background:var(--surf2);border:none;color:var(--txt);width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .setting-group{margin-bottom:20px}
+    .setting-group label{margin-bottom:8px}
+    .save-settings-btn{width:100%;padding:14px;background:var(--pri);border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px}
+    .setting-help{font-size:11px;color:var(--dim);margin-top:4px;line-height:1.4}
+
+    /* Setup screen */
+    .setup-screen{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
+    .setup-logo{font-size:64px;margin-bottom:16px}
+    .setup-title{font-size:24px;font-weight:700;margin-bottom:8px}
+    .setup-desc{font-size:14px;color:var(--dim);margin-bottom:32px;max-width:320px;line-height:1.5}
+    .setup-form{width:100%;max-width:400px}
+    .setup-form .setting-group{text-align:left}
+    .setup-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--pri),var(--pri2));border:none;border-radius:var(--radius);color:#fff;font-size:16px;font-weight:700;cursor:pointer;margin-top:16px}
+
+    /* Spinner */
+    .spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Reset button */
+    .reset-row{text-align:center;margin-top:16px}
+    .reset-link{font-size:12px;color:var(--dim);text-decoration:underline;cursor:pointer;background:none;border:none;font-family:inherit}
+  </style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ─── Storage helpers ───
+  const STORE_KEY = 'jobvideo_settings';
+  function loadSettings(){
+    try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }catch(e){ return {}; }
+  }
+  function saveSettings(s){ localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
+
+  // ─── State ───
+  let settings = loadSettings();
+  let selectedJob = null;
+  let videoFile = null;
+  let aiCaption = '';
+  let sending = false;
+  let uploadProgress = 0;
+
+  const JOB_TYPES = [
+    { id:'rental',       label:'Fence Rental',        emoji:'🏗️' },
+    { id:'installation', label:'Fence Installation',   emoji:'🔨' },
+    { id:'removal',      label:'Fence Removal',        emoji:'🚜' },
+    { id:'repair',       label:'Fence Repair',         emoji:'🔧' },
+    { id:'inspection',   label:'Site Inspection',      emoji:'📋' },
+    { id:'other',        label:'Other',                emoji:'📌' },
+  ];
+
+  // ─── Render ───
+  function render(){
+    const app = document.getElementById('app');
+    if(!settings.telegramToken || !settings.telegramChatId){
+      app.innerHTML = renderSetup();
+      bindSetup();
+    } else {
+      app.innerHTML = renderMain();
+      bindMain();
+    }
+  }
+
+  // ─── Setup Screen ───
+  function renderSetup(){
+    return `
+      <div class="setup-screen">
+        <div class="setup-logo">📹</div>
+        <div class="setup-title">Job Video Post</div>
+        <div class="setup-desc">Record job site videos and auto-post them to Telegram with AI-generated social media captions.</div>
+        <div class="setup-form">
+          <div class="setting-group">
+            <label>Telegram Bot Token *</label>
+            <input class="input-field" id="setupToken" placeholder="123456:ABC-DEF..." value="${settings.telegramToken||''}">
+            <div class="setting-help">Create a bot via @BotFather on Telegram to get this token.</div>
+          </div>
+          <div class="setting-group">
+            <label>Telegram Chat ID *</label>
+            <input class="input-field" id="setupChatId" placeholder="-1001234567890" value="${settings.telegramChatId||''}">
+            <div class="setting-help">The group/channel ID where videos will be posted. Add your bot to the group first.</div>
+          </div>
+          <div class="setting-group">
+            <label>AI API Key (Claude or OpenAI)</label>
+            <input class="input-field" id="setupAiKey" type="password" placeholder="sk-..." value="${settings.aiApiKey||''}">
+            <div class="setting-help">Optional. Used to auto-generate social media captions. Supports Anthropic or OpenAI keys.</div>
+          </div>
+          <div class="setting-group">
+            <label>Owner Email</label>
+            <input class="input-field" id="setupEmail" type="email" placeholder="owner@company.com" value="${settings.ownerEmail||''}">
+            <div class="setting-help">Optional. AI caption drafts will be emailed here for approval.</div>
+          </div>
+          <div class="setting-group">
+            <label>Business Name</label>
+            <input class="input-field" id="setupBiz" placeholder="ABC Fence Co." value="${settings.businessName||''}">
+            <div class="setting-help">Used in AI-generated captions.</div>
+          </div>
+          <button class="setup-btn" id="setupSave">Get Started</button>
+          <div id="setupError" class="status error" style="margin-top:12px"></div>
+        </div>
+      </div>`;
+  }
+
+  function bindSetup(){
+    document.getElementById('setupSave').addEventListener('click', function(){
+      const token = document.getElementById('setupToken').value.trim();
+      const chatId = document.getElementById('setupChatId').value.trim();
+      const errEl = document.getElementById('setupError');
+      if(!token || !chatId){
+        errEl.textContent = 'Telegram Bot Token and Chat ID are required.';
+        errEl.classList.add('show');
+        return;
+      }
+      settings.telegramToken = token;
+      settings.telegramChatId = chatId;
+      settings.aiApiKey = document.getElementById('setupAiKey').value.trim();
+      settings.ownerEmail = document.getElementById('setupEmail').value.trim();
+      settings.businessName = document.getElementById('setupBiz').value.trim();
+      saveSettings(settings);
+      render();
+    });
+  }
+
+  // ─── Main Screen ───
+  function renderMain(){
+    const jobBtns = JOB_TYPES.map(j => `
+      <div class="job-btn ${selectedJob===j.id?'selected':''}" data-job="${j.id}">
+        <span class="job-emoji">${j.emoji}</span>${j.label}
+      </div>`).join('');
+
+    const fileInfo = videoFile
+      ? `<div class="video-filename">${videoFile.name} (${(videoFile.size/1024/1024).toFixed(1)} MB)</div>
+         <video class="video-preview" src="${URL.createObjectURL(videoFile)}" controls playsinline></video>`
+      : '';
+
+    const canSend = videoFile && selectedJob && !sending;
+
+    return `
+      <div class="header">
+        <h1>Job Video Post</h1>
+        <div class="header-sub">${settings.businessName || 'Fence Services'}</div>
+        <button class="settings-btn" id="openSettings">⚙</button>
+      </div>
+      <div class="container">
+        <div id="statusMsg" class="status"></div>
+
+        <div class="card">
+          <div class="card-title">1. Record Video</div>
+          <div class="video-zone ${videoFile?'has-file':''}" id="videoZone">
+            <span class="video-icon">${videoFile?'✅':'🎬'}</span>
+            <div class="video-label">${videoFile?'Video Selected':'Tap to Record or Upload'}</div>
+            <div class="video-hint">${videoFile?'Tap to change':'60 seconds or less recommended'}</div>
+            ${fileInfo}
+          </div>
+          <input type="file" id="videoInput" accept="video/*" capture="environment">
+        </div>
+
+        <div class="card">
+          <div class="card-title">2. Job Type</div>
+          <div class="job-grid">${jobBtns}</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">3. Details (Optional)</div>
+          <div class="setting-group">
+            <label>Job Address / Location</label>
+            <input class="input-field" id="jobAddress" placeholder="123 Main St, City" value="">
+          </div>
+          <div class="setting-group" style="margin-top:12px">
+            <label>Notes</label>
+            <textarea class="input-field" id="jobNotes" rows="2" placeholder="Any additional details..."></textarea>
+          </div>
+        </div>
+
+        <button class="send-btn primary" id="sendBtn" ${canSend?'':'disabled'}>
+          ${sending?'<span class="spinner"></span> Sending...':'📤 Send to Telegram'}
+        </button>
+
+        <div class="progress-wrap ${sending?'show':''}" id="progressWrap">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:${uploadProgress}%"></div></div>
+          <div class="progress-text" id="progressText">${uploadProgress>0?uploadProgress+'%':'Uploading...'}</div>
+        </div>
+
+        <div class="caption-preview ${aiCaption?'show':''}" id="captionPreview">${escHtml(aiCaption)}</div>
+        ${aiCaption?`
+        <div class="caption-actions">
+          <button class="btn-copy" id="copyCaption">Copy Caption</button>
+          <button class="btn-email" id="emailCaption">📧 Email Draft</button>
+        </div>`:''}
+
+        <div class="reset-row">
+          <button class="reset-link" id="resetForm">Reset Form</button>
+        </div>
+      </div>
+
+      <!-- Settings Overlay -->
+      <div class="overlay" id="settingsOverlay">
+        <div class="settings-panel">
+          <div class="settings-header">
+            <h2>Settings</h2>
+            <button class="close-btn" id="closeSettings">✕</button>
+          </div>
+          <div class="setting-group">
+            <label>Telegram Bot Token</label>
+            <input class="input-field" id="setToken" value="${settings.telegramToken||''}">
+          </div>
+          <div class="setting-group">
+            <label>Telegram Chat ID</label>
+            <input class="input-field" id="setChatId" value="${settings.telegramChatId||''}">
+          </div>
+          <div class="setting-group">
+            <label>AI API Key (Claude or OpenAI)</label>
+            <input class="input-field" id="setAiKey" type="password" value="${settings.aiApiKey||''}">
+          </div>
+          <div class="setting-group">
+            <label>Owner Email</label>
+            <input class="input-field" id="setEmail" type="email" value="${settings.ownerEmail||''}">
+          </div>
+          <div class="setting-group">
+            <label>Business Name</label>
+            <input class="input-field" id="setBiz" value="${settings.businessName||''}">
+          </div>
+          <button class="save-settings-btn" id="saveSettings">Save Settings</button>
+        </div>
+      </div>`;
+  }
+
+  function bindMain(){
+    // Video capture
+    document.getElementById('videoZone').addEventListener('click', function(){
+      document.getElementById('videoInput').click();
+    });
+    document.getElementById('videoInput').addEventListener('change', function(e){
+      if(e.target.files && e.target.files[0]){
+        videoFile = e.target.files[0];
+        render();
+      }
+    });
+
+    // Job type selection
+    document.querySelectorAll('.job-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        selectedJob = this.dataset.job;
+        render();
+      });
+    });
+
+    // Send
+    document.getElementById('sendBtn').addEventListener('click', handleSend);
+
+    // Settings
+    document.getElementById('openSettings').addEventListener('click', function(){
+      document.getElementById('settingsOverlay').classList.add('show');
+    });
+    document.getElementById('closeSettings').addEventListener('click', function(){
+      document.getElementById('settingsOverlay').classList.remove('show');
+    });
+    document.getElementById('settingsOverlay').addEventListener('click', function(e){
+      if(e.target === this) this.classList.remove('show');
+    });
+    document.getElementById('saveSettings').addEventListener('click', function(){
+      settings.telegramToken = document.getElementById('setToken').value.trim();
+      settings.telegramChatId = document.getElementById('setChatId').value.trim();
+      settings.aiApiKey = document.getElementById('setAiKey').value.trim();
+      settings.ownerEmail = document.getElementById('setEmail').value.trim();
+      settings.businessName = document.getElementById('setBiz').value.trim();
+      saveSettings(settings);
+      document.getElementById('settingsOverlay').classList.remove('show');
+      render();
+    });
+
+    // Copy caption
+    if(document.getElementById('copyCaption')){
+      document.getElementById('copyCaption').addEventListener('click', function(){
+        navigator.clipboard.writeText(aiCaption).then(function(){
+          showStatus('Caption copied to clipboard!', 'success');
+        });
+      });
+    }
+
+    // Email caption
+    if(document.getElementById('emailCaption')){
+      document.getElementById('emailCaption').addEventListener('click', handleEmailDraft);
+    }
+
+    // Reset
+    document.getElementById('resetForm').addEventListener('click', function(){
+      videoFile = null;
+      selectedJob = null;
+      aiCaption = '';
+      sending = false;
+      uploadProgress = 0;
+      render();
+    });
+  }
+
+  // ─── Send to Telegram ───
+  function handleSend(){
+    if(!videoFile || !selectedJob || sending) return;
+    sending = true;
+    uploadProgress = 0;
+    render();
+
+    var jobLabel = JOB_TYPES.find(function(j){ return j.id === selectedJob; }).label;
+    var address = document.getElementById('jobAddress') ? document.getElementById('jobAddress').value.trim() : '';
+    var notes = document.getElementById('jobNotes') ? document.getElementById('jobNotes').value.trim() : '';
+
+    var caption = '📹 Job Site Video\n\n';
+    caption += '🏷 Type: ' + jobLabel + '\n';
+    if(address) caption += '📍 Location: ' + address + '\n';
+    if(notes) caption += '📝 Notes: ' + notes + '\n';
+    caption += '📅 ' + new Date().toLocaleString() + '\n';
+    caption += '━━━━━━━━━━━━━━━━\n';
+    caption += (settings.businessName || 'Fence Services');
+
+    var formData = new FormData();
+    formData.append('chat_id', settings.telegramChatId);
+    formData.append('video', videoFile);
+    formData.append('caption', caption);
+    formData.append('parse_mode', 'HTML');
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://api.telegram.org/bot' + settings.telegramToken + '/sendVideo');
+
+    xhr.upload.addEventListener('progress', function(e){
+      if(e.lengthComputable){
+        uploadProgress = Math.round((e.loaded / e.total) * 100);
+        var fill = document.getElementById('progressFill');
+        var text = document.getElementById('progressText');
+        if(fill) fill.style.width = uploadProgress + '%';
+        if(text) text.textContent = uploadProgress + '%';
+      }
+    });
+
+    xhr.addEventListener('load', function(){
+      if(xhr.status === 200){
+        var resp = JSON.parse(xhr.responseText);
+        if(resp.ok){
+          showStatus('Video posted to Telegram successfully!', 'success');
+          // Now generate AI caption if API key is set
+          if(settings.aiApiKey){
+            generateAiCaption(jobLabel, address, notes);
+          } else {
+            sending = false;
+            render();
+          }
+        } else {
+          showStatus('Telegram error: ' + (resp.description || 'Unknown error'), 'error');
+          sending = false;
+          render();
+        }
+      } else {
+        showStatus('Upload failed (HTTP ' + xhr.status + '). Check your bot token and chat ID.', 'error');
+        sending = false;
+        render();
+      }
+    });
+
+    xhr.addEventListener('error', function(){
+      showStatus('Network error. Check your internet connection.', 'error');
+      sending = false;
+      render();
+    });
+
+    xhr.send(formData);
+  }
+
+  // ─── AI Caption Generation ───
+  function generateAiCaption(jobLabel, address, notes){
+    showStatus('Generating AI social media caption...', 'info');
+
+    var bizName = settings.businessName || 'our fence company';
+    var prompt = 'Generate a professional, engaging social media post for a fence company called "' + bizName + '". ' +
+      'Job type: ' + jobLabel + '. ' +
+      (address ? 'Location: ' + address + '. ' : '') +
+      (notes ? 'Details: ' + notes + '. ' : '') +
+      'Include:\n' +
+      '1. An attention-grabbing opening line\n' +
+      '2. Brief professional description of the work (2-3 sentences)\n' +
+      '3. A call-to-action (contact us for a free quote, etc.)\n' +
+      '4. 5-8 relevant hashtags (#FenceInstallation #FenceRental #FencingContractor etc.)\n' +
+      'Keep it under 200 words. Make it suitable for Instagram, Facebook, and Google My Business.\n' +
+      'Do NOT use markdown formatting. Use plain text with emojis.';
+
+    var apiKey = settings.aiApiKey;
+    var isAnthropic = apiKey.startsWith('sk-ant-');
+
+    if(isAnthropic){
+      // Anthropic Claude API
+      fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 512,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data.content && data.content[0]){
+          aiCaption = data.content[0].text;
+        } else {
+          aiCaption = 'Error: ' + (data.error ? data.error.message : 'Could not generate caption');
+        }
+        sending = false;
+        render();
+      })
+      .catch(function(err){
+        showStatus('AI caption failed: ' + err.message, 'error');
+        sending = false;
+        render();
+      });
+    } else {
+      // OpenAI API
+      fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 512
+        })
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data.choices && data.choices[0]){
+          aiCaption = data.choices[0].message.content;
+        } else {
+          aiCaption = 'Error: ' + (data.error ? data.error.message : 'Could not generate caption');
+        }
+        sending = false;
+        render();
+      })
+      .catch(function(err){
+        showStatus('AI caption failed: ' + err.message, 'error');
+        sending = false;
+        render();
+      });
+    }
+  }
+
+  // ─── Email Draft ───
+  function handleEmailDraft(){
+    var to = settings.ownerEmail || '';
+    var biz = settings.businessName || 'Fence Services';
+    var subject = encodeURIComponent('Social Media Post Draft - ' + biz + ' - ' + new Date().toLocaleDateString());
+    var body = encodeURIComponent(
+      'Hi,\n\n' +
+      'Here is the AI-generated social media caption for your review:\n\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+      aiCaption + '\n\n' +
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+      'Please review and approve for posting to:\n' +
+      '• Instagram\n• Facebook\n• Google My Business\n\n' +
+      'Reply APPROVED to post, or edit and reply with changes.\n\n' +
+      '— Job Video Post App'
+    );
+    window.location.href = 'mailto:' + to + '?subject=' + subject + '&body=' + body;
+  }
+
+  // ─── Helpers ───
+  function showStatus(msg, type){
+    var el = document.getElementById('statusMsg');
+    if(el){
+      el.textContent = msg;
+      el.className = 'status show ' + type;
+      setTimeout(function(){ el.classList.remove('show'); }, 5000);
+    }
+  }
+
+  function escHtml(str){
+    if(!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ─── Init ───
+  render();
+
+})();
+</script>
+</body>
+</html>
