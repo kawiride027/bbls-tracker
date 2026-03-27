@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0d9488">
   <title>Job Video Post</title>
@@ -223,12 +223,15 @@
         <span class="job-emoji">${j.emoji}</span>${j.label}
       </div>`).join('');
 
+    const fileSizeMB = videoFile ? (videoFile.size/1024/1024) : 0;
+    const tooLarge = fileSizeMB > 50;
     const fileInfo = videoFile
-      ? `<div class="video-filename">${videoFile.name} (${(videoFile.size/1024/1024).toFixed(1)} MB)</div>
+      ? `<div class="video-filename">${videoFile.name} (${fileSizeMB.toFixed(1)} MB)</div>
+         ${tooLarge ? '<div class="status show error" style="margin-top:8px">Video is over 50MB — Telegram limit. Try a shorter or lower-quality recording.</div>' : ''}
          <video class="video-preview" src="${URL.createObjectURL(videoFile)}" controls playsinline></video>`
       : '';
 
-    const canSend = videoFile && selectedJob && !sending;
+    const canSend = videoFile && selectedJob && !sending && !tooLarge;
 
     return `
       <div class="header">
@@ -244,7 +247,7 @@
           <div class="video-zone ${videoFile?'has-file':''}" id="videoZone">
             <span class="video-icon">${videoFile?'✅':'🎬'}</span>
             <div class="video-label">${videoFile?'Video Selected':'Tap to Record or Upload'}</div>
-            <div class="video-hint">${videoFile?'Tap to change':'60 seconds or less recommended'}</div>
+            <div class="video-hint">${videoFile?'Tap to change':'60 sec or less \u2022 Under 50MB'}</div>
             ${fileInfo}
           </div>
           <input type="file" id="videoInput" accept="video/*" capture="environment">
@@ -445,7 +448,10 @@
           render();
         }
       } else {
-        showStatus('Upload failed (HTTP ' + xhr.status + '). Check your bot token and chat ID.', 'error');
+        var errMsg = xhr.status === 413
+          ? 'Video too large (50MB max). Record a shorter or lower-quality video.'
+          : 'Upload failed (HTTP ' + xhr.status + '). Check your bot token and chat ID.';
+        showStatus(errMsg, 'error');
         sending = false;
         render();
       }
