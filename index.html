@@ -269,9 +269,9 @@ const CYCLE_PATTERN = [
   { pct:0.85, reps:4,  sets:4, accReps:"6-8",   accMin:6,  accMax:8,  accSets:4, deload:false, test:false, meso:4, label:"Meso 4 Wk 1", rest:300 },
   { pct:0.90, reps:2,  sets:4, accReps:"6-8",   accMin:6,  accMax:8,  accSets:4, deload:false, test:false, meso:4, label:"Meso 4 Wk 2", rest:300 },
   // Strength Test
-  { pct:0.95, reps:"AMRAP", sets:2, accReps:8,  accMin:8,  accMax:8,  accSets:2, deload:false, test:true,  meso:4, label:"Strength Test", rest:300 },
+  { pct:0.95, reps:"AMRAP", sets:2, accReps:"6-8",  accMin:6,  accMax:8,  accSets:2, deload:false, test:true,  meso:4, label:"Strength Test", rest:300 },
   // Full Deload
-  { pct:0.50, reps:6,  sets:2, accReps:3,       accMin:3,  accMax:3,  accSets:2, deload:true,  test:false, meso:4, label:"Full Deload", rest:300 },
+  { pct:0.50, reps:5,  sets:2, accReps:3,       accMin:3,  accMax:3,  accSets:2, deload:true,  test:false, meso:4, label:"Full Deload", rest:300 },
 ];
 // Exercises that should NOT be AMRAP-tested (1RM carries forward)
 const NO_TEST = new Set(["Flat Bench"]);
@@ -307,8 +307,11 @@ const DAY_TEMPLATES = [
     { name:"Barbell Curl",     bar:null, prim:false },
   ]},
 ];
+const DEFAULT_1RMS = {
+  "Machine Rear Delt Fly":226,
+};
 const DEFAULT_ACC_WEIGHTS = {
-  "Machine Side Raise":145, "Tricep Rope PD":87.5, "Pull Ups":"BW",
+  "Machine Side Raise":155, "Tricep Rope PD":87.5, "Pull Ups":"BW",
   "One Arm DB Row":110, "Seated Calf Raise":190, "DB Curls":55,
   "Leg Curl Lying":135, "Standing Calf Raise":380, "Seated Cable Row":185,
   "Barbell Curl":100,
@@ -448,7 +451,7 @@ const WEEKS = {
       1:{title:"Chest & Triceps", ex:[
         {id:1,name:"Bench Press",          w:267,bar:45,sets:2,reps:2,prim:true},
         {id:2,name:"Close Grip Bench",     w:230,bar:45,sets:2,reps:2,prim:true},
-        {id:3,name:"Machine Side Raise",   w:145,       sets:2,reps:3,prim:false},
+        {id:3,name:"Machine Side Raise",   w:155,       sets:2,reps:3,prim:false},
         {id:4,name:"Tricep Rope PD",       w:87.5,      sets:2,reps:3,prim:false},
       ]},
       2:{title:"Back & Calves", ex:[
@@ -461,7 +464,7 @@ const WEEKS = {
         {id:9, name:"Military Press",      w:174,bar:45,sets:2,reps:2,prim:true},
         {id:10,name:"Machine Rear Delt Fly",w:194,bar:0,sets:2,reps:2,prim:true},
         {id:11,name:"DB Curls",            w:55,        sets:2,reps:3,prim:false},
-        {id:12,name:"Machine Side Raise",  w:145,       sets:2,reps:3,prim:false},
+        {id:12,name:"Machine Side Raise",  w:155,       sets:2,reps:3,prim:false},
       ]},
       4:{title:"Legs", ex:[
         {id:13,name:"Barbell Squat",       w:165,bar:45,sets:2,reps:2,prim:true},
@@ -479,39 +482,39 @@ const WEEKS = {
   },
   29:{
     label:"Week 29 \u2014 Strength Test", cycle:"Strength Test Week",
-    intensity:"95% AMRAP", note:"Go to failure \u00b7 2 sets \u00b7 Acc: 8 reps",
+    intensity:"95% AMRAP", note:"Go to failure + back-off \u00b7 Acc: 6-8 reps",
     next:"Week 30: Mesocycle 3 (70%)",
     rP:300, rA:120,
     isTest:true,
     days:{
       1:{title:"Chest Test", ex:[
-        {id:1,name:"Bench Press",       w:282,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:297},
-        {id:2,name:"Close Grip Bench",  w:242,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:255},
-        {id:3,name:"Machine Side Raise",w:145,       sets:2,reps:8,prim:false},
-        {id:4,name:"Tricep Rope PD",    w:87.5,      sets:2,reps:8,prim:false},
+        {id:1,name:"Bench Press",       w:282,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:297,backoffW:250,backoffReps:4},
+        {id:2,name:"Close Grip Bench",  w:242,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:255,backoffW:215,backoffReps:4},
+        {id:3,name:"Machine Side Raise",w:155,       sets:2,reps:"6-8",prim:false},
+        {id:4,name:"Tricep Rope PD",    w:87.5,      sets:2,reps:"6-8",prim:false},
       ]},
       2:{title:"Back Test", ex:[
-        {id:5,name:"Deadlift",          w:324,bar:50,sets:2,reps:"AMRAP",prim:true,test:true,rm:341},
-        {id:6,name:"Pull Ups",          w:"BW",      sets:2,reps:8,prim:false},
-        {id:7,name:"One Arm DB Row",    w:110,       sets:2,reps:8,prim:false},
-        {id:8,name:"Seated Calf Raise", w:190,       sets:2,reps:8,prim:false},
+        {id:5,name:"Deadlift",          w:324,bar:50,sets:2,reps:"AMRAP",prim:true,test:true,rm:341,backoffW:290,backoffReps:4},
+        {id:6,name:"Pull Ups",          w:"BW",      sets:2,reps:"6-8",prim:false},
+        {id:7,name:"One Arm DB Row",    w:110,       sets:2,reps:"6-8",prim:false},
+        {id:8,name:"Seated Calf Raise", w:190,       sets:2,reps:"6-8",prim:false},
       ]},
       3:{title:"Shoulders Test", ex:[
-        {id:9, name:"Military Press",        w:183,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:193},
-        {id:10,name:"Machine Rear Delt Fly", w:204,bar:0, sets:2,reps:"AMRAP",prim:true,test:true,rm:215},
-        {id:11,name:"DB Curls",              w:55,        sets:2,reps:8,prim:false},
-        {id:12,name:"Machine Side Raise",    w:145,       sets:2,reps:8,prim:false},
+        {id:9, name:"Military Press",        w:183,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:193,backoffW:165,backoffReps:4},
+        {id:10,name:"Machine Rear Delt Fly", w:215,bar:0, sets:2,reps:"AMRAP",prim:true,test:true,rm:226,backoffW:190,backoffReps:4},
+        {id:11,name:"DB Curls",              w:55,        sets:2,reps:"6-8",prim:false},
+        {id:12,name:"Machine Side Raise",    w:155,       sets:2,reps:"6-8",prim:false},
       ]},
       4:{title:"Legs Test", ex:[
-        {id:13,name:"Barbell Squat",    w:174,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:183},
-        {id:14,name:"Leg Press",        w:448,bar:0, sets:2,reps:"AMRAP",prim:true,test:true,rm:472},
-        {id:15,name:"Leg Curl Lying",   w:135,       sets:2,reps:8,prim:false},
-        {id:16,name:"Standing Calf Raise",w:380,     sets:2,reps:8,prim:false},
+        {id:13,name:"Barbell Squat",    w:174,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:183,backoffW:155,backoffReps:4},
+        {id:14,name:"Leg Press",        w:448,bar:0, sets:2,reps:"AMRAP",prim:true,test:true,rm:472,backoffW:400,backoffReps:4},
+        {id:15,name:"Leg Curl Lying",   w:135,       sets:2,reps:"6-8",prim:false},
+        {id:16,name:"Standing Calf Raise",w:380,     sets:2,reps:"6-8",prim:false},
       ]},
       5:{title:"Chest Test 2", ex:[
-        {id:17,name:"Incline Bench",    w:239,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:252},
-        {id:18,name:"Seated Cable Row", w:185,       sets:2,reps:8,prim:false},
-        {id:19,name:"Barbell Curl",     w:100,       sets:2,reps:8,prim:false},
+        {id:17,name:"Incline Bench",    w:239,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:252,backoffW:215,backoffReps:4},
+        {id:18,name:"Seated Cable Row", w:185,       sets:2,reps:"6-8",prim:false},
+        {id:19,name:"Barbell Curl",     w:100,       sets:2,reps:"6-8",prim:false},
       ]},
     }
   }
@@ -527,7 +530,7 @@ function generateCycle(startWeek, oneRMs, accW) {
     if (pat.test) cycleLabel = "Strength Test Week";
     else if (pat.deload && pat.meso===4) cycleLabel = `Cycle ${cycleNum} \u00b7 Full Deload`;
     else cycleLabel = `Cycle ${cycleNum} \u00b7 Meso ${pat.meso}${pat.deload?' Deload':''}`;
-    const primNote = pat.test ? "Go to failure \u00b7 2 sets" : `${pat.reps} reps \u00b7 ${pat.sets} sets`;
+    const primNote = pat.test ? "Go to failure + back-off" : `${pat.reps} reps \u00b7 ${pat.sets} sets`;
     const accNote = `Acc: ${pat.accReps} reps${pat.test?'':' \u00b7 '+pat.accSets+' sets'}`;
     const noteStr = primNote + " \u00b7 " + accNote;
     const nextPat = CYCLE_PATTERN[idx+1];
@@ -555,6 +558,8 @@ function generateCycle(startWeek, oneRMs, accW) {
             ex.reps = "AMRAP";
             ex.test = true;
             ex.rm = oneRM;
+            ex.backoffW = roundTo5(oneRM * 0.85);
+            ex.backoffReps = 4;
             if (et.rmKey) ex.rmKey = et.rmKey;
           } else {
             ex.sets = pat.sets;
@@ -645,7 +650,7 @@ function App() {
   const [showQuote, setShowQuote] = useState(true);
   const [celebration, setCelebration] = useState(null);
   const [toast, setToast] = useState(null);
-  const [saved1RMs, setSaved1RMs] = useState(()=>JSON.parse(localStorage.getItem('saved1RMs')||'{}'));
+  const [saved1RMs, setSaved1RMs] = useState(()=>({...DEFAULT_1RMS, ...JSON.parse(localStorage.getItem('saved1RMs')||'{}')}));
   const [sheetsUrl, setSheetsUrl] = useState(()=>localStorage.getItem('sheetsUrl')||'');
   const [expandedWeeks, setExpandedWeeks] = useState({});
   const [cycles, setCycles] = useState(()=>JSON.parse(localStorage.getItem('bblsCycles')||'[]'));
@@ -1562,7 +1567,7 @@ function App() {
           {!ex.test&&!wd.isDeload&&!wd.isTest&&fails>=3&&ex.prim&&<div className="alrt ng">{'\u26A0\uFE0F'} Missed target 3+ sets &mdash; consider -10 lbs next week</div>}
           {!wd.isDeload&&!wd.isTest&&ex.sugg==='up'&&<div className="alrt ok">{'\uD83D\uDCAA'} All sets hit! Next week +10 lbs</div>}
           <div className="wbox">
-            <div className="wlbl">Working Weight</div>
+            <div className="wlbl">{ex.test&&ex.backoffW ? 'AMRAP Weight (95%)' : 'Working Weight'}</div>
             <div className="wval">{ex.cw}{typeof ex.cw==='number'?' LBS':''}</div>
             {typeof ex.cw==='number'&&(
               <div className="wadj">
@@ -1581,19 +1586,52 @@ function App() {
               </div>
             )}
           </div>
-          <div className="slbl">Log Sets &middot; Target: {ex.reps} reps</div>
-          <div className="sgrid">
-            {ex.sets.map((r,si)=>{
-              const hit = r !== null && r >= tgtMin && r <= tgtMax;
-              const miss = r !== null && (r < tgtMin || r > tgtMax);
-              return(
-                <div key={si} className={`sbox${hit?' hit':miss?' miss':''}`}>
-                  <div className="sn">Set {si+1}</div>
-                  <input className="sinput" type="number" inputMode="numeric" value={r??''} placeholder="–" onChange={e=>updSet(si,e.target.value)}/>
+          {ex.test&&ex.backoffW ? (
+            <>
+              <div className="slbl">Set 1 &middot; AMRAP (to technical failure)</div>
+              <div className="sgrid" style={{gridTemplateColumns:'1fr'}}>
+                <div className={`sbox${ex.sets[0]!==null?(ex.sets[0]>=1?' hit':' miss'):''}`}>
+                  <div className="sn">Set 1 &mdash; AMRAP</div>
+                  <input className="sinput" type="number" inputMode="numeric" value={ex.sets[0]??''} placeholder="–" onChange={e=>updSet(0,e.target.value)}/>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+              <div className="wbox" style={{marginTop:14}}>
+                <div className="wlbl">Back-off Weight (85%)</div>
+                <div className="wval">{ex.backoffW} LBS</div>
+                {typeof ex.bar==='number'&&(
+                  <div className="pbox">
+                    <div className="plbl">Load Per Side</div>
+                    <div className="pval">
+                      {ex.name === "Standing Calf Raise" ? `${ex.backoffW} lbs total` : calcPlatesForExercise(ex.name, ex.backoffW, ex.bar)}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="slbl">Set 2 &middot; Target: {ex.backoffReps} reps</div>
+              <div className="sgrid" style={{gridTemplateColumns:'1fr'}}>
+                <div className={`sbox${ex.sets[1]!==null?(ex.sets[1]>=ex.backoffReps?' hit':' miss'):''}`}>
+                  <div className="sn">Set 2 &mdash; Back-off</div>
+                  <input className="sinput" type="number" inputMode="numeric" value={ex.sets[1]??''} placeholder="–" onChange={e=>updSet(1,e.target.value)}/>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="slbl">Log Sets &middot; Target: {ex.reps} reps</div>
+              <div className="sgrid">
+                {ex.sets.map((r,si)=>{
+                  const hit = r !== null && r >= tgtMin && r <= tgtMax;
+                  const miss = r !== null && (r < tgtMin || r > tgtMax);
+                  return(
+                    <div key={si} className={`sbox${hit?' hit':miss?' miss':''}`}>
+                      <div className="sn">Set {si+1}</div>
+                      <input className="sinput" type="number" inputMode="numeric" value={r??''} placeholder="–" onChange={e=>updSet(si,e.target.value)}/>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
           <div className="tcard">
             <div className={`tdisp${ticking?' tick':''}${timerDisplay<0?' neg':''}`}>{fmt(timerDisplay)}</div>
             <div className="tpre">
