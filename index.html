@@ -127,8 +127,14 @@
     .sugg.up { color:var(--green); }
     .sugg.dn { color:var(--bad); }
     /* Day grid */
-    .daybtn { background:var(--sec); border:1px solid var(--bdr); color:var(--txt); padding:16px; border-radius:10px; cursor:pointer; width:100%; margin-bottom:10px; text-align:left; font-family:'Roboto Condensed',sans-serif; font-size:15px; font-weight:bold; transition:all .2s; display:flex; justify-content:space-between; align-items:center; }
+    .daybtn { background:var(--sec); border:1px solid var(--bdr); color:var(--txt); padding:16px; border-radius:10px; cursor:pointer; flex:1; text-align:left; font-family:'Roboto Condensed',sans-serif; font-size:15px; font-weight:bold; transition:all .2s; display:flex; justify-content:space-between; align-items:center; }
     .daybtn:active { background:var(--red); border-color:var(--red); }
+    .daybtn:disabled { opacity:.6; cursor:not-allowed; }
+    .dayrow { display:flex; gap:8px; margin-bottom:10px; }
+    .skipbtn { background:var(--sec); border:1px solid var(--bdr); color:var(--warn); padding:0 16px; border-radius:10px; cursor:pointer; font-family:'Roboto Condensed',sans-serif; font-size:18px; font-weight:bold; transition:all .2s; min-width:52px; }
+    .skipbtn:active { background:var(--warn); color:#000; border-color:var(--warn); }
+    .skipbtn:disabled { opacity:.3; cursor:not-allowed; }
+    .misstag { font-size:11px; color:var(--warn); font-weight:bold; }
     .dtag { font-size:11px; color:var(--dim); font-weight:normal; }
     .donetag { font-size:11px; color:var(--green); font-weight:bold; }
     /* Week picker */
@@ -227,14 +233,12 @@ function calcPlatesCustom(total, bar, availablePlates, showPerSide) {
 function calcPlatesForExercise(exerciseName, total, bar) {
   // Leg Press: no bar, plates per side, no 55s
   if (exerciseName === "Leg Press") {
-    const perSide = total / 2;
-    return calcPlatesCustom(perSide, 0, [45,35,25,10,5,2.5], true);
+    return calcPlatesCustom(total, 0, [45,35,25,10,5,2.5], true);
   }
-  
+
   // Seated Calf Raise: no bar, plates per side, no 55s
   if (exerciseName === "Seated Calf Raise") {
-    const perSide = total / 2;
-    return calcPlatesCustom(perSide, 0, [45,35,25,10,5,2.5], true);
+    return calcPlatesCustom(total, 0, [45,35,25,10,5,2.5], true);
   }
   
   // Bench variations: 45lb bar, no 55s
@@ -273,8 +277,20 @@ const CYCLE_PATTERN = [
   // Full Deload
   { pct:0.50, reps:6,  sets:2, accReps:3,       accMin:3,  accMax:3,  accSets:2, deload:true,  test:false, meso:4, label:"Full Deload", rest:300 },
 ];
-// Exercises that should NOT be AMRAP-tested (1RM carries forward)
-const NO_TEST = new Set(["Flat Bench"]);
+// Exercises that should NOT be AMRAP-tested (1RM carries forward; legacy Set kept for back-compat)
+const NO_TEST = new Set();
+// Default starting 1RMs used when saved1RMs is missing an entry for a primary lift.
+// Sourced from Week 29 hardcoded rm values so the program has sensible starting numbers.
+const DEFAULT_1RMS = {
+  "Bench Press": 297,
+  "Close Grip Bench": 255,
+  "Deadlift": 341,
+  "Military Press": 193,
+  "Machine Rear Delt Fly": 215,
+  "Barbell Squat": 183,
+  "Leg Press": 472,
+  "Incline Bench": 252,
+};
 const DAY_TEMPLATES = [
   { day:1, title:"Chest & Triceps", ex:[
     { name:"Bench Press",        bar:45, prim:true },
@@ -302,7 +318,7 @@ const DAY_TEMPLATES = [
   ]},
   { day:5, title:"Chest & Back", ex:[
     { name:"Incline Bench",    bar:45,  prim:true },
-    { name:"Flat Bench",       bar:45,  prim:true, rmKey:"Bench Press" },
+    { name:"Bench Press",      bar:45,  prim:true, rmKey:"Bench Press", noTest:true },
     { name:"Seated Cable Row", bar:null, prim:false },
     { name:"Barbell Curl",     bar:null, prim:false },
   ]},
@@ -471,7 +487,7 @@ const WEEKS = {
       ]},
       5:{title:"Chest & Back", ex:[
         {id:17,name:"Incline Bench",       w:227,bar:45,sets:2,reps:2,prim:true},
-        {id:18,name:"Flat Bench",          w:267,bar:45,sets:2,reps:2,prim:true},
+        {id:18,name:"Bench Press",         w:267,bar:45,sets:2,reps:2,prim:true},
         {id:19,name:"Seated Cable Row",    w:185,       sets:2,reps:3,prim:false},
         {id:20,name:"Barbell Curl",        w:100,       sets:2,reps:3,prim:false},
       ]},
@@ -546,11 +562,11 @@ function generateCycle(startWeek, oneRMs, accW) {
         const rmKey = et.rmKey || et.name;
         const ex = { id: di*10+exi+1, name: et.name };
         if (et.prim) {
-          const oneRM = oneRMs[rmKey] || 0;
+          const oneRM = oneRMs[rmKey] || DEFAULT_1RMS[rmKey] || 0;
           ex.w = roundTo5(oneRM * pat.pct);
           if (et.bar !== null) ex.bar = et.bar;
           ex.prim = true;
-          if (pat.test && !NO_TEST.has(et.name)) {
+          if (pat.test && !et.noTest && !NO_TEST.has(et.name)) {
             ex.sets = pat.sets;
             ex.reps = "AMRAP";
             ex.test = true;
@@ -652,6 +668,8 @@ function App() {
   const [accWeights, setAccWeights] = useState(()=>JSON.parse(localStorage.getItem('accWeights')||JSON.stringify(DEFAULT_ACC_WEIGHTS)));
   const [accProgressData, setAccProgressData] = useState(null);
   const [repRangeAlertData, setRepRangeAlertData] = useState(null);
+  const [skipData, setSkipData] = useState(null);
+  const [skipReason, setSkipReason] = useState('');
   const beeped = useRef(false);
   const wakeLock = useRef(null);
   const pendingWeightOverrides = useRef({});
@@ -661,7 +679,10 @@ function App() {
     Object.assign(allWeeks, generateCycle(c.startWeek, c.oneRMs, c.accWeights));
   });
   const wd = allWeeks[week];
-  const doneDays = history.filter(h=>h.week===week).map(h=>h.day);
+  const weekHistory = history.filter(h=>h.week===week);
+  const doneDays = weekHistory.filter(h=>!h.missed).map(h=>h.day);
+  const missedDays = weekHistory.filter(h=>h.missed).map(h=>h.day);
+  const missedReasons = Object.fromEntries(weekHistory.filter(h=>h.missed).map(h=>[h.day, h.reason||'']));
   // Pick a quote for today
   const [quote] = useState(() => {
     let last = parseInt(localStorage.getItem('lastQuote') || '-1');
@@ -780,7 +801,7 @@ function App() {
     const dayData = wd.days[day];
     if (!dayData) return [];
     const candidates = history
-      .filter(h => h.day === day && h.week < week)
+      .filter(h => h.day === day && h.week < week && !h.missed)
       .sort((a, b) => b.week - a.week);
     let prevWo = null;
     for (const wo of candidates) {
@@ -813,7 +834,7 @@ function App() {
     const dayData = wd.days[day];
     if (!dayData) return [];
     const candidates = history
-      .filter(h => h.day === day && h.week < week)
+      .filter(h => h.day === day && h.week < week && !h.missed)
       .sort((a, b) => b.week - a.week);
     let prevWo = null;
     for (const wo of candidates) {
@@ -1014,7 +1035,7 @@ function App() {
       if (cycles.length > 0) {
         const curWd = allWeeks[workout.week];
         if (curWd && curWd.isTest) {
-          const testDays = newHistory.filter(h=>h.week===workout.week).map(h=>h.day);
+          const testDays = newHistory.filter(h=>h.week===workout.week && !h.missed).map(h=>h.day);
           const uniqueDays = [...new Set(testDays)];
           if (uniqueDays.length >= 5) {
             const lastCycle = cycles[cycles.length - 1];
@@ -1040,11 +1061,32 @@ function App() {
   };
   const abandon=()=>{setWorkout(null);setEi(0);setTimerEndTime(null);setModal(null);releaseWakeLock();};
   const delHist=i=>setHistory(h=>h.filter((_,j)=>j!==i));
+  const confirmSkip=()=>{
+    if(!skipData) return;
+    const entry = {
+      week: skipData.week,
+      day: skipData.day,
+      title: skipData.title,
+      date: new Date().toISOString(),
+      missed: true,
+      reason: skipReason.trim(),
+      ex: [],
+    };
+    setHistory(h=>[...h, entry]);
+    setSkipData(null);
+    setSkipReason('');
+    setToast({msg:'Day marked as missed',type:'ok'});
+  };
+  const cancelSkip=()=>{ setSkipData(null); setSkipReason(''); };
   const exportCSV=()=>{
     if(!history.length)return;
     let csv='Date,Week,Day,Exercise,Weight,Set1,Set2,Set3,Set4,Notes\n';
     history.forEach(w=>{
       const d=new Date(w.date).toLocaleDateString();
+      if(w.missed){
+        csv+=`${d},${w.week},${w.day},"MISSED",,,,,,"${(w.reason||'').replace(/"/g,'""')}"\n`;
+        return;
+      }
       w.ex.forEach(e=>{
         const s=e.sets.concat([null,null,null,null]).slice(0,4);
         csv+=`${d},${w.week},${w.day},"${e.name}",${e.cw},${s.map(v=>v??'').join(',')},"${e.notes||''}"\n`;
@@ -1263,19 +1305,29 @@ function App() {
           <div className="card">
             <div className="ct">Select Today's Workout</div>
             {Object.entries(wd.days).map(([d,data])=>{
-              const done=doneDays.includes(parseInt(d));
+              const dNum = parseInt(d);
+              const done = doneDays.includes(dNum);
+              const missed = missedDays.includes(dNum);
+              const reason = missedReasons[dNum];
+              const locked = done || missed;
               return(
-                <button key={d} className="daybtn" onClick={()=>handleDayClick(parseInt(d))}>
-                  <div>
-                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:1}}>
-                      Day {d}: {data.title}
+                <div key={d} className="dayrow">
+                  <button className="daybtn" onClick={()=>!locked && handleDayClick(dNum)} disabled={locked}>
+                    <div>
+                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:1}}>
+                        Day {d}: {data.title}
+                      </div>
+                      <div style={{fontSize:11,color:missed?'var(--warn)':'var(--dim)',marginTop:2}}>
+                        {missed ? (reason ? `Missed \u00b7 ${reason}` : 'Missed') : `${data.ex.length} exercises \u00b7 ${wd.note}`}
+                      </div>
                     </div>
-                    <div style={{fontSize:11,color:'var(--dim)',marginTop:2}}>
-                      {data.ex.length} exercises &middot; {wd.note}
-                    </div>
-                  </div>
-                  {done&&<span className="donetag">{'\u2713'} Done</span>}
-                </button>
+                    {done && <span className="donetag">{'\u2713'} Done</span>}
+                    {missed && <span className="misstag">{'\u2298'} Missed</span>}
+                  </button>
+                  {!locked && (
+                    <button className="skipbtn" onClick={()=>{setSkipData({week, day:dNum, title:data.title}); setSkipReason('');}} title="Skip this day">{'\u2715'}</button>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -1284,10 +1336,15 @@ function App() {
             <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8}}>
               {[1,2,3,4,5].map(d=>{
                 const done=doneDays.includes(d);
+                const missed=missedDays.includes(d);
+                const bg = done?'rgba(0,230,118,.15)':missed?'rgba(255,170,0,.15)':'var(--sec)';
+                const border = done?'var(--green)':missed?'var(--warn)':'var(--bdr)';
+                const iconColor = done?'var(--green)':missed?'var(--warn)':'var(--dim)';
+                const icon = done?'\u2713':missed?'\u2298':'\u25CB';
                 return(
-                  <div key={d} style={{background:done?'rgba(0,230,118,.15)':'var(--sec)',border:`1px solid ${done?'var(--green)':'var(--bdr)'}`,borderRadius:8,padding:'10px 4px',textAlign:'center'}}>
+                  <div key={d} style={{background:bg,border:`1px solid ${border}`,borderRadius:8,padding:'10px 4px',textAlign:'center'}}>
                     <div style={{fontSize:10,color:'var(--dim)',marginBottom:4}}>D{d}</div>
-                    <div style={{fontSize:18,color:done?'var(--green)':'var(--dim)'}}>{done?'\u2713':'\u25CB'}</div>
+                    <div style={{fontSize:18,color:iconColor}}>{icon}</div>
                   </div>
                 );
               })}
@@ -1377,6 +1434,26 @@ function App() {
         </div>
         {/* Toast */}
         {toast && <div className={`toast ${toast.type}`}>{toast.msg}</div>}
+        {/* Skip Day Confirmation */}
+        <div className={`modal${skipData?' open':''}`}>
+          <div className="mbox">
+            <div className="mt">Mark Day as Missed?</div>
+            {skipData && (
+              <>
+                <p style={{textAlign:'center',color:'var(--txt)',marginBottom:8,fontSize:15}}>
+                  Week {skipData.week} &middot; Day {skipData.day}: <strong>{skipData.title}</strong>
+                </p>
+                <p style={{textAlign:'center',color:'var(--dim)',marginBottom:16,fontSize:13}}>
+                  This will log the day as missed in your history. You can still start it later by deleting the missed entry.
+                </p>
+                <div className="wlbl" style={{marginBottom:6}}>Reason (optional)</div>
+                <textarea className="ntxt" style={{marginBottom:16,minHeight:70}} placeholder="e.g. sick, travel, work conflict" value={skipReason} onChange={e=>setSkipReason(e.target.value)} />
+                <button className="btn bok" onClick={confirmSkip}>{'\u2298'} Mark Missed</button>
+                <button className="btn bsc" onClick={cancelSkip}>Cancel</button>
+              </>
+            )}
+          </div>
+        </div>
         {/* Week Selector */}
         <div className={`modal${modal==='week'?' open':''}`}>
           <div className="mbox">
@@ -1410,7 +1487,7 @@ function App() {
         <div className={`modal${modal==='dash'?' open':''}`}>
           <div className="mbox">
             <div className="mt">Program Dashboard</div>
-            {[['Current Week',`Week ${week}`],['Cycle',wd.cycle],['Intensity',wd.intensity],['Protocol',wd.note],['Next Week',wd.next],['Done This Week',`${doneDays.length} / 5`],['Total Saved',`${history.length}`],['Cycles Generated',`${cycles.length}`]].map(([l,v])=>(
+            {[['Current Week',`Week ${week}`],['Cycle',wd.cycle],['Intensity',wd.intensity],['Protocol',wd.note],['Next Week',wd.next],['Done This Week',`${doneDays.length} / 5`],['Missed This Week',`${missedDays.length}`],['Total Saved',`${history.length}`],['Cycles Generated',`${cycles.length}`]].map(([l,v])=>(
               <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'12px 0',borderBottom:'1px solid var(--bdr)'}}>
                 <span style={{color:'var(--dim)',fontSize:13}}>{l}</span>
                 <span style={{color:'var(--red)',fontWeight:'bold',fontSize:13}}>{v}</span>
@@ -1444,8 +1521,10 @@ function App() {
                       <div className={`prog-week-body${isOpen?' open':''}`}>
                         {workouts.sort((a,b)=>a.day-b.day).map((wo, wi) => (
                           <div key={wi} className="prog-day">
-                            <div className="prog-day-title">Day {wo.day}: {wo.title}</div>
-                            {wo.ex.map((e, exi) => {
+                            <div className="prog-day-title" style={wo.missed?{color:'var(--warn)'}:{}}>
+                              Day {wo.day}: {wo.title}{wo.missed?` \u00b7 \u2298 Missed${wo.reason?' \u00b7 '+wo.reason:''}`:''}
+                            </div>
+                            {wo.missed ? null : wo.ex.map((e, exi) => {
                               let tgtMin, tgtMax;
                               if (typeof e.reps === 'string' && e.reps.includes('-')) {
                                 const parts = e.reps.split('-');
@@ -1487,10 +1566,17 @@ function App() {
                   {history.slice().reverse().map((h,ri)=>{
                     const i=history.length-1-ri;
                     return(
-                      <div key={i} className="hi">
+                      <div key={i} className="hi" style={h.missed?{borderLeftColor:'var(--warn)'}:{}}>
                         <div style={{flex:1}}>
-                          <div className="ht">Week {h.week} Day {h.day}: {h.title}</div>
-                          <div className="hm">{new Date(h.date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})} &middot; {h.ex.length} exercises</div>
+                          <div className="ht" style={h.missed?{color:'var(--warn)'}:{}}>
+                            {h.missed ? `${'\u2298'} ` : ''}Week {h.week} Day {h.day}: {h.title}
+                          </div>
+                          <div className="hm">
+                            {new Date(h.date).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
+                            {h.missed
+                              ? ` \u00b7 Missed${h.reason?' \u00b7 '+h.reason:''}`
+                              : ` \u00b7 ${h.ex.length} exercises`}
+                          </div>
                         </div>
                         <button className="delbtn" onClick={()=>delHist(i)}>{'\uD83D\uDDD1'}</button>
                       </div>
