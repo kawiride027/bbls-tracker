@@ -1083,6 +1083,10 @@ function App() {
     setToast({msg:'Day marked as missed',type:'ok'});
   };
   const cancelSkip=()=>{ setSkipData(null); setSkipReason(''); };
+  const undoMiss=(day)=>{
+    setHistory(h=>h.filter(e=>!(e.week===week && e.day===day && e.missed)));
+    setToast({msg:`Day ${day} missed status removed`,type:'ok'});
+  };
   const exportCSV=()=>{
     if(!history.length)return;
     let csv='Date,Week,Day,Exercise,Weight,Set1,Set2,Set3,Set4,Notes\n';
@@ -1317,19 +1321,22 @@ function App() {
               const locked = done || missed;
               return(
                 <div key={d} className="dayrow">
-                  <button className="daybtn" onClick={()=>!locked && handleDayClick(dNum)} disabled={locked}>
+                  <button className="daybtn" onClick={()=>{
+                    if(missed){ if(confirm(`Undo missed status for Day ${d}: ${data.title}?`)) undoMiss(dNum); }
+                    else if(!done) handleDayClick(dNum);
+                  }} disabled={done}>
                     <div>
                       <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:1}}>
                         Day {d}: {data.title}
                       </div>
                       <div style={{fontSize:11,color:missed?'var(--warn)':'var(--dim)',marginTop:2}}>
-                        {missed ? (reason ? `Missed \u00b7 ${reason}` : 'Missed') : `${data.ex.length} exercises \u00b7 ${wd.note}`}
+                        {missed ? (reason ? `Missed \u00b7 ${reason} \u00b7 Tap to undo` : 'Missed \u00b7 Tap to undo') : `${data.ex.length} exercises \u00b7 ${wd.note}`}
                       </div>
                     </div>
                     {done && <span className="donetag">{'\u2713'} Done</span>}
                     {missed && <span className="misstag">{'\u2298'} Missed</span>}
                   </button>
-                  {!locked && (
+                  {!done && !missed && (
                     <button className="skipbtn" onClick={()=>{setSkipData({week, day:dNum, title:data.title}); setSkipReason('');}} title="Skip this day">{'\u2715'}</button>
                   )}
                 </div>
