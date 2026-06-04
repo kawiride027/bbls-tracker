@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.json">
   <title>BBLS Tracker Pro</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Condensed:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?familhy=Bebas+Neue&family=Roboto+Condensed:wght@400;700&display=swap');
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     :root {
       --red:#FF4500; --red2:#CC3700; --bg:#0a0a0a; --surf:#1a1a1a; --sec:#111;
@@ -582,6 +582,7 @@ function generateCycle(startWeek, oneRMs, accW) {
           // Accessory: use rep-range-specific weight
           const accKey = et.name + " " + pat.accReps;
           ex.w = et.bw ? "BW" : (accW[accKey] || accW[et.name] || 0);
+          if (et.bar !== null && et.bar !== undefined) ex.bar = et.bar;
           ex.sets = pat.accSets;
           ex.reps = pat.accReps;
           ex.prim = false;
