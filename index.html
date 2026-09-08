@@ -606,6 +606,107 @@ function generateCycle(startWeek, oneRMs, accW) {
   });
   return weeks;
 }
+const CYCLE_LEN = 16;
+const MSR_8_10_KEY = "Machine Side Raise 8-10";
+const MSR_STALE_WEIGHT = 180;
+const MSR_HEAL_FALLBACK = 140;
+function findActiveCycleIndex(cycles, currentWeek) {
+  if (!Array.isArray(cycles) || !cycles.length) return -1;
+  for (let i = cycles.length - 1; i >= 0; i--) {
+    const start = cycles[i] && cycles[i].startWeek;
+    if (typeof start === 'number' && currentWeek >= start && currentWeek < start + CYCLE_LEN) return i;
+  }
+  const last = cycles[cycles.length - 1];
+  if (last && typeof last.startWeek === 'number' && currentWeek >= last.startWeek) return cycles.length - 1;
+  return -1;
+}
+function isUntrustedSideRaiseLog(wo, ex) {
+  return !!(wo && ex && ex.name === "Machine Side Raise" && Number(ex.cw) === MSR_STALE_WEIGHT);
+}
+function lastCredibleLoggedCw(history, name) {
+  if (!Array.isArray(history)) return null;
+  const sorted = history.filter(h => h && !h.missed).slice().sort((a,b) => (b.week - a.week) || ((b.day||0) - (a.day||0)));
+  for (const wo of sorted) {
+    const ex = (wo.ex || []).find(e => e && e.name === name && typeof e.cw === 'number');
+    if (!ex) continue;
+    if (isUntrustedSideRaiseLog(wo, ex)) continue;
+    return ex.cw;
+  }
+  return null;
+}
+function resolveLiveAccWeight(live, name, reps, fallback) {
+  if (fallback === "BW") return fallback;
+  const rangeKey = name + " " + reps;
+  const liveMap = live || {};
+  let w = liveMap[rangeKey];
+  if (w === undefined || w === null) w = liveMap[name];
+  if (w === undefined || w === null) w = fallback;
+  if (name === "Machine Side Raise" && String(reps) === "8-10" && Number(w) === MSR_STALE_WEIGHT) {
+    const nameW = liveMap["Machine Side Raise"];
+    if (typeof nameW === 'number' && nameW !== MSR_STALE_WEIGHT) return nameW;
+    return MSR_HEAL_FALLBACK;
+  }
+  return w;
+}
+function resolveMsr810(live, history) {
+  const liveMap = live || {};
+  const range = liveMap[MSR_8_10_KEY];
+  if (typeof range === 'number' && range !== MSR_STALE_WEIGHT) return range;
+  const nameW = liveMap["Machine Side Raise"];
+  if (typeof nameW === 'number' && nameW !== MSR_STALE_WEIGHT) return nameW;
+  const cred = lastCredibleLoggedCw(history, "Machine Side Raise");
+  if (typeof cred === 'number' && cred !== MSR_STALE_WEIGHT) return cred;
+  return MSR_HEAL_FALLBACK;
+}
+function accMapsEqual(a, b) {
+  const left = a || {}, right = b || {};
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  for (const k of keys) { if (left[k] !== right[k]) return false; }
+  return true;
+}
+function healStaleAccessorySnapshots(cycles, live, currentWeek, history) {
+  const nextLive = { ...(live || {}) };
+  let liveChanged = false;
+  const msr = resolveMsr810(nextLive, history);
+  if (nextLive[MSR_8_10_KEY] === MSR_STALE_WEIGHT || nextLive[MSR_8_10_KEY] == null) {
+    if (nextLive[MSR_8_10_KEY] !== msr) {
+      nextLive[MSR_8_10_KEY] = msr;
+      liveChanged = true;
+    }
+  }
+  const idx = findActiveCycleIndex(cycles, currentWeek);
+  if (idx < 0) return { cycles, live: nextLive, cyclesChanged: false, liveChanged };
+  const cur = cycles[idx];
+  const acc = { ...(cur.accWeights || {}) };
+  let accChanged = false;
+  for (const [k, v] of Object.entries(nextLive)) {
+    if (acc[k] !== v) { acc[k] = v; accChanged = true; }
+  }
+  if (acc[MSR_8_10_KEY] === MSR_STALE_WEIGHT) {
+    acc[MSR_8_10_KEY] = msr;
+    accChanged = true;
+  }
+  if (!accChanged && !liveChanged) return { cycles, live, cyclesChanged: false, liveChanged: false };
+  const nextCycles = accChanged ? cycles.map((c, i) => i === idx ? { ...c, accWeights: acc } : c) : cycles;
+  return { cycles: nextCycles, live: nextLive, cyclesChanged: accChanged, liveChanged };
+}
+function loadHealedTrainingState() {
+  let cycles = [];
+  let live = { ...DEFAULT_ACC_WEIGHTS };
+  let history = [];
+  try { cycles = JSON.parse(localStorage.getItem('bblsCycles') || '[]') || []; } catch (e) { cycles = []; }
+  try { live = JSON.parse(localStorage.getItem('accWeights') || JSON.stringify(DEFAULT_ACC_WEIGHTS)) || { ...DEFAULT_ACC_WEIGHTS }; } catch (e) { live = { ...DEFAULT_ACC_WEIGHTS }; }
+  try { history = JSON.parse(localStorage.getItem('wh') || '[]') || []; } catch (e) { history = []; }
+  const currentWeek = parseInt(localStorage.getItem('currentWeek') || '28', 10);
+  const healed = healStaleAccessorySnapshots(cycles, live, currentWeek, history);
+  if (healed.cyclesChanged) {
+    try { localStorage.setItem('bblsCycles', JSON.stringify(healed.cycles)); } catch (e) {}
+  }
+  if (healed.liveChanged) {
+    try { localStorage.setItem('accWeights', JSON.stringify(healed.live)); } catch (e) {}
+  }
+  return healed;
+}
 // ── PIN Screen ─────────────────────────────────────────────────
 function PinScreen({ onUnlock }) {
   const [pin, setPin] = useState('');
@@ -667,8 +768,10 @@ function App() {
   const [saved1RMs, setSaved1RMs] = useState(()=>({...DEFAULT_1RMS, ...JSON.parse(localStorage.getItem('saved1RMs')||'{}')}));
   const [sheetsUrl, setSheetsUrl] = useState(()=>localStorage.getItem('sheetsUrl')||'');
   const [expandedWeeks, setExpandedWeeks] = useState({});
-  const [cycles, setCycles] = useState(()=>JSON.parse(localStorage.getItem('bblsCycles')||'[]'));
-  const [accWeights, setAccWeights] = useState(()=>JSON.parse(localStorage.getItem('accWeights')||JSON.stringify(DEFAULT_ACC_WEIGHTS)));
+  const bootHeal = useRef(null);
+  if (!bootHeal.current) bootHeal.current = loadHealedTrainingState();
+  const [cycles, setCycles] = useState(()=>bootHeal.current.cycles);
+  const [accWeights, setAccWeights] = useState(()=>bootHeal.current.live);
   const [accProgressData, setAccProgressData] = useState(null);
   const [repRangeAlertData, setRepRangeAlertData] = useState(null);
   const [skipData, setSkipData] = useState(null);
@@ -678,8 +781,10 @@ function App() {
   const pendingWeightOverrides = useRef({});
   // Build all weeks: hardcoded 28-29 + generated cycles
   const allWeeks = { ...WEEKS };
-  cycles.forEach(c => {
-    Object.assign(allWeeks, generateCycle(c.startWeek, c.oneRMs, c.accWeights));
+  const activeCycleIdx = findActiveCycleIndex(cycles, week);
+  cycles.forEach((c, i) => {
+    const accW = i === activeCycleIdx ? { ...(c.accWeights || {}), ...accWeights } : c.accWeights;
+    Object.assign(allWeeks, generateCycle(c.startWeek, c.oneRMs, accW));
   });
   const wd = allWeeks[week];
   const weekHistory = history.filter(h=>h.week===week);
@@ -773,12 +878,28 @@ function App() {
     setTimerEndTime(null);
     beeped.current = false;
   };
+  const syncActiveCycleAccWeights = (patch, forWeek) => {
+    const wk = forWeek != null ? forWeek : week;
+    setCycles(prev => {
+      const idx = findActiveCycleIndex(prev, wk);
+      if (idx < 0) return prev;
+      const cur = prev[idx];
+      const nextAcc = { ...(cur.accWeights || {}), ...patch };
+      if (accMapsEqual(cur.accWeights, nextAcc)) return prev;
+      const next = prev.slice();
+      next[idx] = { ...cur, accWeights: nextAcc };
+      return next;
+    });
+  };
   const startDay=(day, overrides = {})=>{
     const dayData=wd.days[day];
     setWorkout({
       week, day, title:dayData.title, date:new Date().toISOString(),
       ex: dayData.ex.map(e=>{
-        const w = overrides[e.name] !== undefined ? overrides[e.name] : e.w;
+        let w = overrides[e.name] !== undefined ? overrides[e.name] : e.w;
+        if (overrides[e.name] === undefined && !e.prim) {
+          w = resolveLiveAccWeight(accWeights, e.name, e.reps, e.w);
+        }
         return {...e, cw:w, sets:Array(e.sets).fill(null), notes:'', done:false, sugg:null};
       })
     });
@@ -815,7 +936,8 @@ function App() {
     const prompts = [];
     dayData.ex.forEach(e => {
       if (e.prim) return;
-      if (typeof e.w !== 'number') return;
+      const programmed = resolveLiveAccWeight(accWeights, e.name, e.reps, e.w);
+      if (typeof programmed !== 'number') return;
       const prevEx = prevWo.ex.find(pe => pe.name === e.name);
       if (!prevEx) return;
       const prevSets = (prevEx.sets || []).filter(s => s !== null);
@@ -824,9 +946,9 @@ function App() {
       const allHitTop = prevSets.every(s => s >= topOfRange);
       const misses = prevSets.filter(s => s < bottomOfRange).length;
       if (allHitTop) {
-        prompts.push({ name: e.name, currentWeight: e.w, suggestion: 'up', lastSets: prevSets, repRange: e.reps, topOfRange, bottomOfRange, adjustment: null });
+        prompts.push({ name: e.name, currentWeight: programmed, suggestion: 'up', lastSets: prevSets, repRange: e.reps, topOfRange, bottomOfRange, adjustment: null });
       } else if (misses >= 2) {
-        prompts.push({ name: e.name, currentWeight: e.w, suggestion: 'down', lastSets: prevSets, repRange: e.reps, topOfRange, bottomOfRange, adjustment: null });
+        prompts.push({ name: e.name, currentWeight: programmed, suggestion: 'down', lastSets: prevSets, repRange: e.reps, topOfRange, bottomOfRange, adjustment: null });
       }
     });
     return prompts;
@@ -855,10 +977,15 @@ function App() {
       const prevRange = String(prevEx.reps);
       if (currRange === prevRange) return;
       const rangeKey = e.name + " " + currRange;
-      const storedWeight = typeof accWeights[rangeKey] === 'number' ? accWeights[rangeKey] : null;
+      let storedWeight = typeof accWeights[rangeKey] === 'number' ? accWeights[rangeKey] : null;
+      const lastCw = lastCredibleLoggedCw(history, e.name);
+      const staleRange = storedWeight === MSR_STALE_WEIGHT && e.name === "Machine Side Raise" && currRange === "8-10";
+      if (storedWeight === null || staleRange) {
+        if (typeof lastCw === 'number') storedWeight = lastCw;
+      }
       const getMaxReps = r => { const s = String(r); return s.includes('-') ? parseInt(s.split('-')[1]) : (parseInt(s) || 10); };
       const direction = getMaxReps(currRange) < getMaxReps(prevRange) ? 'heavier' : 'lighter';
-      const baseWeight = storedWeight !== null ? storedWeight : e.w;
+      const baseWeight = storedWeight !== null ? storedWeight : resolveLiveAccWeight(accWeights, e.name, currRange, e.w);
       prompts.push({
         name: e.name, baseWeight, currentWeight: e.w, storedWeight,
         oldRange: prevRange, newRange: currRange, direction,
@@ -897,6 +1024,7 @@ function App() {
       newAccWeights[p.name + " " + p.newRange] = finalWeight;
     });
     setAccWeights(newAccWeights);
+    syncActiveCycleAccWeights(newAccWeights, week);
     pendingWeightOverrides.current = overrides;
     setRepRangeAlertData(null);
     const rangeChangeNames = new Set(prompts.map(p => p.name));
@@ -944,6 +1072,7 @@ function App() {
       }
     });
     setAccWeights(newAccWeights);
+    syncActiveCycleAccWeights(newAccWeights, week);
     setWorkout({
       week, day, title: dayData.title, date: new Date().toISOString(),
       ex: dayData.ex.map(e => {
@@ -951,7 +1080,8 @@ function App() {
           return { ...e, cw: overrides[e.name], sets: Array(e.sets).fill(null), notes: '', done: false, sugg: null };
         }
         const adj = adjustments[e.name] || 0;
-        const w = typeof e.w === 'number' ? e.w + adj : e.w;
+        const base = e.prim ? e.w : resolveLiveAccWeight(accWeights, e.name, e.reps, e.w);
+        const w = typeof base === 'number' ? base + adj : base;
         return { ...e, cw: w, sets: Array(e.sets).fill(null), notes: '', done: false, sugg: null };
       })
     });
@@ -1015,9 +1145,10 @@ function App() {
     if(typeof e.cw==='number'){
       e.cw=Math.max(0,e.cw+d);
       if(!e.prim){
-        // Save with rep range
+        // Save with rep range — keep the active cycle snapshot in sync
         const accKey = e.name + " " + e.reps;
         setAccWeights(prev=>({...prev,[accKey]:e.cw}));
+        syncActiveCycleAccWeights({ [accKey]: e.cw }, w.week);
       }
     }
     setWorkout(w);
@@ -1407,10 +1538,11 @@ function App() {
                     onChange={e=>{
                       const val = e.target.value==='BW'?'BW': (parseFloat(e.target.value)||0);
                       setAccWeights(prev=>({...prev,[name]:val}));
+                      syncActiveCycleAccWeights({ [name]: val });
                     }} />
                 </div>
               ))}
-              <div style={{color:'var(--dim)',fontSize:11,marginTop:8,textAlign:'center'}}>Changes here update future generated cycles</div>
+              <div style={{color:'var(--dim)',fontSize:11,marginTop:8,textAlign:'center'}}>Changes apply to this cycle and the next workout</div>
             </div>
           )}
           {/* Settings card */}
