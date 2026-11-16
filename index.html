@@ -320,15 +320,69 @@ const DAY_TEMPLATES = [
     { name:"Incline Bench",    bar:45,  prim:true },
     { name:"Bench Press",      bar:45,  prim:true, rmKey:"Bench Press", noTest:true },
     { name:"Seated Cable Row", bar:null, prim:false },
-    { name:"Barbell Curl",     bar:null, prim:false },
+    { name:"DB Curls",         bar:null, prim:false },
   ]},
 ];
 const DEFAULT_ACC_WEIGHTS = {
   "Machine Side Raise":155, "Tricep Rope PD":87.5, "Pull Ups":"BW",
   "One Arm DB Row":110, "Seated Calf Raise":190, "DB Curls":55,
   "Leg Curl Lying":135, "Standing Calf Raise":380, "Seated Cable Row":185,
-  "Barbell Curl":100,
 };
+// Barbell Curl was removed. Day 5 uses the existing DB Curls entry (same scheme, its own weights).
+const CURL_REMOVED = "Barbell Curl";
+const CURL_REPLACEMENT = "DB Curls";
+const AMRAP_REP_MAX = 15;
+const TM_JUMP_CAP = 1.15;
+// One-line training-max pin, applied after Epley and the upward jump guard.
+// Leave empty. To hold a lift: { "Bench Press": 315 }
+const ONE_RM_PINS = {};
+function isRemovedCurlKey(key) {
+  return key === CURL_REMOVED || String(key).indexOf(CURL_REMOVED + " ") === 0;
+}
+function stripCurlMap(map) {
+  const src = map || {};
+  const next = {};
+  let changed = false;
+  Object.keys(src).forEach(k => {
+    if (isRemovedCurlKey(k)) { changed = true; return; }
+    next[k] = src[k];
+  });
+  return { map: next, changed };
+}
+function resolvePlannedExerciseName(name, siblingNames) {
+  if (name !== CURL_REMOVED) return name;
+  if ((siblingNames || []).indexOf(CURL_REPLACEMENT) !== -1) return null;
+  return CURL_REPLACEMENT;
+}
+function acceptAmrapInput(val) {
+  if (val === '' || val == null) return true;
+  const n = parseInt(val, 10);
+  return Number.isFinite(n) && n >= 0 && n <= AMRAP_REP_MAX;
+}
+function salvageAmrapReps(reps) {
+  if (typeof reps !== 'number' || reps <= AMRAP_REP_MAX) return null;
+  if (reps >= 10 && reps <= 99) {
+    const lead = Math.floor(reps / 10);
+    if (lead >= 1 && lead <= AMRAP_REP_MAX) return lead;
+  }
+  return null;
+}
+function gateTestOneRm(proposed, previous) {
+  if (typeof proposed !== 'number' || !(proposed > 0)) {
+    return { value: typeof previous === 'number' ? previous : proposed, flagged: false, proposed };
+  }
+  if (typeof previous === 'number' && previous > 0 && proposed > previous * TM_JUMP_CAP) {
+    return { value: previous, flagged: true, proposed };
+  }
+  return { value: proposed, flagged: false, proposed };
+}
+function applyPins(oneRMs) {
+  const next = { ...(oneRMs || {}) };
+  Object.keys(ONE_RM_PINS).forEach(k => {
+    if (typeof ONE_RM_PINS[k] === 'number' && ONE_RM_PINS[k] > 0) next[k] = ONE_RM_PINS[k];
+  });
+  return next;
+}
 // ── Motivational Quotes ────────────────────────────────────────
 const QUOTES = [
   { text: "The iron never lies. You either lift it or you don't.", author: "Henry Rollins" },
@@ -489,7 +543,7 @@ const WEEKS = {
         {id:17,name:"Incline Bench",       w:227,bar:45,sets:2,reps:2,prim:true},
         {id:18,name:"Bench Press",         w:267,bar:45,sets:2,reps:2,prim:true},
         {id:19,name:"Seated Cable Row",    w:185,       sets:2,reps:3,prim:false},
-        {id:20,name:"Barbell Curl",        w:100,       sets:2,reps:3,prim:false},
+        {id:20,name:"DB Curls",            w:55,        sets:2,reps:3,prim:false},
       ]},
     }
   },
@@ -527,7 +581,7 @@ const WEEKS = {
       5:{title:"Chest Test 2", ex:[
         {id:17,name:"Incline Bench",    w:239,bar:45,sets:2,reps:"AMRAP",prim:true,test:true,rm:252,backoffW:215,backoffReps:4},
         {id:18,name:"Seated Cable Row", w:185,       sets:2,reps:"6-8",prim:false},
-        {id:19,name:"Barbell Curl",     w:100,       sets:2,reps:"6-8",prim:false},
+        {id:19,name:"DB Curls",         w:55,        sets:2,reps:"6-8",prim:false},
       ]},
     }
   }
@@ -558,15 +612,19 @@ function generateCycle(startWeek, oneRMs, accW) {
         const base = tmpl.title.split("&")[0].trim();
         dayTitle = base + " Test" + (dayNum===5?" 2":"");
       }
-      const exercises = tmpl.ex.map((et, exi) => {
-        const rmKey = et.rmKey || et.name;
-        const ex = { id: di*10+exi+1, name: et.name };
+      const siblingNames = tmpl.ex.map(et => et.name);
+      const exercises = [];
+      tmpl.ex.forEach((et, exi) => {
+        const name = resolvePlannedExerciseName(et.name, siblingNames);
+        if (!name || exercises.some(x => x.name === name)) return;
+        const rmKey = et.rmKey || name;
+        const ex = { id: di*10+exi+1, name };
         if (et.prim) {
           const oneRM = oneRMs[rmKey] || DEFAULT_1RMS[rmKey] || 0;
           ex.w = roundTo5(oneRM * pat.pct);
           if (et.bar !== null) ex.bar = et.bar;
           ex.prim = true;
-          if (pat.test && !et.noTest && !NO_TEST.has(et.name)) {
+          if (pat.test && !et.noTest && !NO_TEST.has(name)) {
             ex.sets = pat.sets;
             ex.reps = "AMRAP";
             ex.test = true;
@@ -579,15 +637,14 @@ function generateCycle(startWeek, oneRMs, accW) {
             ex.reps = pat.reps;
           }
         } else {
-          // Accessory: use rep-range-specific weight
-          const accKey = et.name + " " + pat.accReps;
-          ex.w = et.bw ? "BW" : (accW[accKey] || accW[et.name] || 0);
+          const accKey = name + " " + pat.accReps;
+          ex.w = et.bw ? "BW" : (accW[accKey] || accW[name] || 0);
           if (et.bar !== null && et.bar !== undefined) ex.bar = et.bar;
           ex.sets = pat.accSets;
           ex.reps = pat.accReps;
           ex.prim = false;
         }
-        return ex;
+        exercises.push(ex);
       });
       days[dayNum] = { title: dayTitle, ex: exercises };
     });
@@ -690,22 +747,248 @@ function healStaleAccessorySnapshots(cycles, live, currentWeek, history) {
   const nextCycles = accChanged ? cycles.map((c, i) => i === idx ? { ...c, accWeights: acc } : c) : cycles;
   return { cycles: nextCycles, live: nextLive, cyclesChanged: accChanged, liveChanged };
 }
+const FIRST_CYCLE_START = 30;
+function cycleStartForWeek(week) {
+  if (typeof week !== 'number' || week < FIRST_CYCLE_START) return null;
+  return FIRST_CYCLE_START + Math.floor((week - FIRST_CYCLE_START) / CYCLE_LEN) * CYCLE_LEN;
+}
+function oneRmsEqual(a, b) {
+  const left = a || {}, right = b || {};
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  for (const k of keys) { if (left[k] !== right[k]) return false; }
+  return true;
+}
+function repairFatFingerAmraps(history) {
+  if (!Array.isArray(history)) return { history: [], changed: false };
+  let changed = false;
+  const next = history.map(wo => {
+    if (!wo || wo.missed || !Array.isArray(wo.ex)) return wo;
+    let woChanged = false;
+    const ex = wo.ex.map(e => {
+      if (!e || !e.test || !Array.isArray(e.sets)) return e;
+      const salvaged = salvageAmrapReps(e.sets[0]);
+      if (salvaged == null) return e;
+      woChanged = true;
+      changed = true;
+      const sets = e.sets.slice();
+      sets[0] = salvaged;
+      const rm = typeof e.cw === 'number' ? calcRM(e.cw, salvaged) : e.rm;
+      return { ...e, sets, rm };
+    });
+    return woChanged ? { ...wo, ex } : wo;
+  });
+  return { history: changed ? next : history, changed };
+}
+function latestLoggedTestWeek(history) {
+  let best = null;
+  (history || []).forEach(h => {
+    if (!h || h.missed) return;
+    const hit = (h.ex || []).some(e => e && e.test && e.sets && e.sets[0] > 0 && typeof e.cw === 'number');
+    if (hit && (best == null || h.week > best)) best = h.week;
+  });
+  return best;
+}
+function collectTestLifts(history, testWeek) {
+  const byKey = {};
+  const rows = (history || []).filter(h => h && !h.missed && h.week === testWeek);
+  rows.sort((a, b) => (a.day || 0) - (b.day || 0) || String(a.date).localeCompare(String(b.date)));
+  rows.forEach(h => {
+    (h.ex || []).forEach(e => {
+      if (!e || !e.test) return;
+      const reps = e.sets && e.sets[0];
+      if (!(reps > 0) || typeof e.cw !== 'number') return;
+      const key = e.rmKey || e.name;
+      byKey[key] = { cw: e.cw, reps, proposed: calcRM(e.cw, reps) };
+    });
+  });
+  return byKey;
+}
+function baselineOneRm(cycles, week, key) {
+  const start = cycleStartForWeek(week);
+  if (start == null) return null;
+  const cycle = (cycles || []).find(c => c && c.startWeek === start);
+  const v = cycle && cycle.oneRMs && cycle.oneRMs[key];
+  return typeof v === 'number' ? v : null;
+}
+function describeTestEstimate(exercise, cycles, week) {
+  if (!exercise || !exercise.test || !(exercise.sets && exercise.sets[0] > 0) || typeof exercise.cw !== 'number') return null;
+  const proposed = calcRM(exercise.cw, exercise.sets[0]);
+  const key = exercise.rmKey || exercise.name;
+  const previous = baselineOneRm(cycles, week, key);
+  const gated = gateTestOneRm(proposed, previous);
+  const value = Object.prototype.hasOwnProperty.call(ONE_RM_PINS, key) ? ONE_RM_PINS[key] : gated.value;
+  return { key, proposed, previous, value, flagged: gated.flagged && value === gated.value };
+}
+function deriveLatestMaxes(history, cycles, saved1RMs) {
+  const base = { ...DEFAULT_1RMS, ...(saved1RMs || {}) };
+  const testWeek = latestLoggedTestWeek(history);
+  const flags = {};
+  if (testWeek == null) return { oneRMs: applyPins(base), flags };
+  const start = cycleStartForWeek(testWeek);
+  const baselineCycle = (cycles || []).find(c => c && c.startWeek === start);
+  const previous = (baselineCycle && baselineCycle.oneRMs) || {};
+  const lifts = collectTestLifts(history, testWeek);
+  const oneRMs = { ...base };
+  Object.keys(lifts).sort().forEach(key => {
+    if (Object.prototype.hasOwnProperty.call(ONE_RM_PINS, key)) {
+      oneRMs[key] = ONE_RM_PINS[key];
+      return;
+    }
+    const prev = typeof previous[key] === 'number' ? previous[key] : (typeof base[key] === 'number' ? base[key] : null);
+    const gated = gateTestOneRm(lifts[key].proposed, prev);
+    oneRMs[key] = gated.value;
+    if (gated.flagged) {
+      flags[key] = { proposed: lifts[key].proposed, kept: gated.value, week: testWeek, reps: lifts[key].reps, cw: lifts[key].cw };
+    }
+  });
+  return { oneRMs: applyPins(oneRMs), flags };
+}
+function oneRmsForCycleStart(start, cycles, history, saved1RMs) {
+  const testWeek = start <= FIRST_CYCLE_START ? 29 : start - 2;
+  const baselineStart = cycleStartForWeek(testWeek);
+  const baselineCycle = (cycles || []).find(c => c && c.startWeek === baselineStart);
+  const previous = (baselineCycle && baselineCycle.oneRMs) || {};
+  const lifts = collectTestLifts(history, testWeek);
+  if (!Object.keys(lifts).length) return applyPins({ ...DEFAULT_1RMS, ...(saved1RMs || {}) });
+  const oneRMs = { ...DEFAULT_1RMS, ...previous };
+  Object.keys(lifts).forEach(key => {
+    if (Object.prototype.hasOwnProperty.call(ONE_RM_PINS, key)) {
+      oneRMs[key] = ONE_RM_PINS[key];
+      return;
+    }
+    const prev = typeof previous[key] === 'number' ? previous[key] : null;
+    oneRMs[key] = gateTestOneRm(lifts[key].proposed, prev).value;
+  });
+  return applyPins(oneRMs);
+}
+function cycleHasTrainingLogs(history, start) {
+  return (history || []).some(h => h && !h.missed && h.week >= start && h.week < start + CYCLE_LEN && Array.isArray(h.ex) && h.ex.length > 0);
+}
+function requiredCycleStarts(currentWeek, cycles) {
+  if (!(currentWeek >= FIRST_CYCLE_START)) {
+    if (!cycles.length) return [];
+    const first = cycles.slice().sort((a, b) => a.startWeek - b.startWeek)[0].startWeek;
+    return [first, first + CYCLE_LEN];
+  }
+  const cur = cycleStartForWeek(currentWeek);
+  return [cur, cur + CYCLE_LEN];
+}
+function reconcileCycles(cycles, history, live, saved1RMs, currentWeek) {
+  let list = (cycles || []).map(c => ({
+    ...c,
+    oneRMs: { ...(c.oneRMs || {}) },
+    accWeights: stripCurlMap(c.accWeights).map,
+  }));
+  let changed = false;
+  let created = false;
+  let oneRmsUpdated = false;
+  const need = requiredCycleStarts(currentWeek, list);
+  need.forEach(start => {
+    if (list.some(c => c.startWeek === start)) return;
+    list.push({
+      startWeek: start,
+      oneRMs: oneRmsForCycleStart(start, list, history, saved1RMs),
+      accWeights: { ...stripCurlMap(live).map },
+    });
+    changed = true;
+    created = true;
+  });
+  const liveAcc = stripCurlMap(live).map;
+  list = list.map(c => {
+    const trained = cycleHasTrainingLogs(history, c.startWeek);
+    const acc = trained ? stripCurlMap(c.accWeights).map : { ...stripCurlMap(c.accWeights).map, ...liveAcc };
+    let oneRMs = c.oneRMs;
+    if (!trained && need.indexOf(c.startWeek) !== -1) {
+      oneRMs = oneRmsForCycleStart(c.startWeek, list, history, saved1RMs);
+    }
+    if (!oneRmsEqual(c.oneRMs, oneRMs)) oneRmsUpdated = true;
+    if (!oneRmsEqual(c.oneRMs, oneRMs) || !accMapsEqual(c.accWeights, acc)) changed = true;
+    return { ...c, oneRMs, accWeights: acc };
+  });
+  list.sort((a, b) => a.startWeek - b.startWeek);
+  return { cycles: list, changed, created, oneRmsUpdated };
+}
+// One-time: WK60's test is fully logged, the WK61 deload was finished without a log,
+// and currentWeek was left on 60. Later visits do not skip a deload.
+function shouldAdvancePastUnloggedDeload(currentWeek, history) {
+  if (currentWeek !== 60) return false;
+  const days = new Set();
+  let deload = false;
+  (history || []).forEach(h => {
+    if (!h || h.missed) return;
+    if (h.week === 60 && h.day) days.add(h.day);
+    if (h.week === 61) deload = true;
+  });
+  return days.size >= 5 && !deload;
+}
+function planFromState(input, opts) {
+  const advanceUnloggedDeload = !!(opts && opts.advanceUnloggedDeload);
+  const repaired = repairFatFingerAmraps(input.history || []);
+  const strippedLive = stripCurlMap(input.live || {});
+  let cycles = (input.cycles || []).map(c => ({
+    ...c,
+    oneRMs: { ...(c.oneRMs || {}) },
+    accWeights: stripCurlMap(c.accWeights).map,
+  }));
+  let currentWeek = parseInt(input.currentWeek, 10);
+  if (!Number.isFinite(currentWeek)) currentWeek = 28;
+  const healed = healStaleAccessorySnapshots(cycles, strippedLive.map, currentWeek, repaired.history);
+  cycles = healed.cycles.map(c => ({ ...c, accWeights: stripCurlMap(c.accWeights).map }));
+  const live = stripCurlMap(healed.live).map;
+  let didAdvance = false;
+  if (advanceUnloggedDeload && shouldAdvancePastUnloggedDeload(currentWeek, repaired.history)) {
+    currentWeek = 62;
+    didAdvance = true;
+  }
+  const derived = deriveLatestMaxes(repaired.history, cycles, input.saved1RMs || {});
+  const reconciled = reconcileCycles(cycles, repaired.history, live, derived.oneRMs, currentWeek);
+  const curlOnCycles = (input.cycles || []).some(c => Object.keys(c.accWeights || {}).some(isRemovedCurlKey));
+  return {
+    history: repaired.history,
+    historyChanged: repaired.changed,
+    live,
+    liveChanged: strippedLive.changed || healed.liveChanged,
+    cycles: reconciled.cycles,
+    cyclesChanged: reconciled.changed || healed.cyclesChanged || curlOnCycles || strippedLive.changed,
+    saved1RMs: derived.oneRMs,
+    rmsChanged: !oneRmsEqual(derived.oneRMs, { ...DEFAULT_1RMS, ...(input.saved1RMs || {}) }),
+    flags: derived.flags,
+    flagsChanged: JSON.stringify(derived.flags) !== JSON.stringify(input.flags || {}),
+    currentWeek,
+    weekChanged: currentWeek !== parseInt(input.currentWeek, 10),
+    didAdvance,
+    created: reconciled.created,
+    oneRmsUpdated: reconciled.oneRmsUpdated,
+  };
+}
 function loadHealedTrainingState() {
   let cycles = [];
   let live = { ...DEFAULT_ACC_WEIGHTS };
   let history = [];
+  let saved1RMs = { ...DEFAULT_1RMS };
+  let flags = {};
+  let currentWeek = 28;
   try { cycles = JSON.parse(localStorage.getItem('bblsCycles') || '[]') || []; } catch (e) { cycles = []; }
-  try { live = JSON.parse(localStorage.getItem('accWeights') || JSON.stringify(DEFAULT_ACC_WEIGHTS)) || { ...DEFAULT_ACC_WEIGHTS }; } catch (e) { live = { ...DEFAULT_ACC_WEIGHTS }; }
+  try { live = JSON.parse(localStorage.getItem('accWeights') || 'null') || { ...DEFAULT_ACC_WEIGHTS }; } catch (e) { live = { ...DEFAULT_ACC_WEIGHTS }; }
   try { history = JSON.parse(localStorage.getItem('wh') || '[]') || []; } catch (e) { history = []; }
-  const currentWeek = parseInt(localStorage.getItem('currentWeek') || '28', 10);
-  const healed = healStaleAccessorySnapshots(cycles, live, currentWeek, history);
-  if (healed.cyclesChanged) {
-    try { localStorage.setItem('bblsCycles', JSON.stringify(healed.cycles)); } catch (e) {}
-  }
-  if (healed.liveChanged) {
-    try { localStorage.setItem('accWeights', JSON.stringify(healed.live)); } catch (e) {}
-  }
-  return healed;
+  try { saved1RMs = { ...DEFAULT_1RMS, ...(JSON.parse(localStorage.getItem('saved1RMs') || '{}') || {}) }; } catch (e) { saved1RMs = { ...DEFAULT_1RMS }; }
+  try { flags = JSON.parse(localStorage.getItem('bblsOneRmFlags') || '{}') || {}; } catch (e) { flags = {}; }
+  currentWeek = parseInt(localStorage.getItem('currentWeek') || '28', 10);
+  const advanceDone = localStorage.getItem('bblsWk61Advanced') === '1';
+  const planned = planFromState(
+    { cycles, live, history, saved1RMs, currentWeek, flags },
+    { advanceUnloggedDeload: !advanceDone }
+  );
+  try {
+    if (planned.historyChanged) localStorage.setItem('wh', JSON.stringify(planned.history));
+    if (planned.liveChanged) localStorage.setItem('accWeights', JSON.stringify(planned.live));
+    if (planned.cyclesChanged) localStorage.setItem('bblsCycles', JSON.stringify(planned.cycles));
+    if (planned.rmsChanged) localStorage.setItem('saved1RMs', JSON.stringify(planned.saved1RMs));
+    if (planned.flagsChanged) localStorage.setItem('bblsOneRmFlags', JSON.stringify(planned.flags));
+    if (planned.weekChanged) localStorage.setItem('currentWeek', String(planned.currentWeek));
+    if (planned.didAdvance) localStorage.setItem('bblsWk61Advanced', '1');
+  } catch (e) {}
+  return planned;
 }
 // ── PIN Screen ─────────────────────────────────────────────────
 function PinScreen({ onUnlock }) {
@@ -750,14 +1033,16 @@ function PinScreen({ onUnlock }) {
 }
 // ── Main App ───────────────────────────────────────────────────
 function App() {
+  const bootHeal = useRef(null);
+  if (!bootHeal.current) bootHeal.current = loadHealedTrainingState();
   const [unlocked, setUnlocked] = useState(()=>{
     const t=localStorage.getItem('lastActive');
     return t && (Date.now()-parseInt(t))<30*60*1000;
   });
-  const [week, setWeek] = useState(()=>parseInt(localStorage.getItem('currentWeek')||'28'));
+  const [week, setWeek] = useState(()=>bootHeal.current.currentWeek);
   const [workout, setWorkout] = useState(null);
   const [ei, setEi] = useState(0);
-  const [history, setHistory] = useState(()=>JSON.parse(localStorage.getItem('wh')||'[]'));
+  const [history, setHistory] = useState(()=>bootHeal.current.history);
   const [timerEndTime, setTimerEndTime] = useState(null);
   const [timerDisplay, setTimerDisplay] = useState(0);
   const [preset, setPreset] = useState(2);
@@ -765,11 +1050,10 @@ function App() {
   const [showQuote, setShowQuote] = useState(true);
   const [celebration, setCelebration] = useState(null);
   const [toast, setToast] = useState(null);
-  const [saved1RMs, setSaved1RMs] = useState(()=>({...DEFAULT_1RMS, ...JSON.parse(localStorage.getItem('saved1RMs')||'{}')}));
+  const [saved1RMs, setSaved1RMs] = useState(()=>bootHeal.current.saved1RMs);
+  const [oneRmFlags, setOneRmFlags] = useState(()=>bootHeal.current.flags || {});
   const [sheetsUrl, setSheetsUrl] = useState(()=>localStorage.getItem('sheetsUrl')||'');
   const [expandedWeeks, setExpandedWeeks] = useState({});
-  const bootHeal = useRef(null);
-  if (!bootHeal.current) bootHeal.current = loadHealedTrainingState();
   const [cycles, setCycles] = useState(()=>bootHeal.current.cycles);
   const [accWeights, setAccWeights] = useState(()=>bootHeal.current.live);
   const [accProgressData, setAccProgressData] = useState(null);
@@ -779,11 +1063,13 @@ function App() {
   const beeped = useRef(false);
   const wakeLock = useRef(null);
   const pendingWeightOverrides = useRef({});
-  // Build all weeks: hardcoded 28-29 + generated cycles
+  // Hardcoded 28-29, stored cycles, plus the full cycle after the current one.
   const allWeeks = { ...WEEKS };
-  const activeCycleIdx = findActiveCycleIndex(cycles, week);
-  cycles.forEach((c, i) => {
-    const accW = i === activeCycleIdx ? { ...(c.accWeights || {}), ...accWeights } : c.accWeights;
+  const activeStart = cycleStartForWeek(week);
+  cycles.forEach((c) => {
+    const trained = cycleHasTrainingLogs(history, c.startWeek);
+    const overlay = !trained || c.startWeek === activeStart;
+    const accW = overlay ? { ...(c.accWeights || {}), ...accWeights } : (c.accWeights || {});
     Object.assign(allWeeks, generateCycle(c.startWeek, c.oneRMs, accW));
   });
   const wd = allWeeks[week];
@@ -802,6 +1088,7 @@ function App() {
   useEffect(()=>{localStorage.setItem('wh',JSON.stringify(history));},[history]);
   useEffect(()=>{if(unlocked)localStorage.setItem('lastActive',Date.now());},[unlocked]);
   useEffect(()=>{localStorage.setItem('saved1RMs',JSON.stringify(saved1RMs));},[saved1RMs]);
+  useEffect(()=>{localStorage.setItem('bblsOneRmFlags',JSON.stringify(oneRmFlags));},[oneRmFlags]);
   useEffect(()=>{localStorage.setItem('sheetsUrl',sheetsUrl);},[sheetsUrl]);
   useEffect(()=>{localStorage.setItem('bblsCycles',JSON.stringify(cycles));},[cycles]);
   useEffect(()=>{localStorage.setItem('accWeights',JSON.stringify(accWeights));},[accWeights]);
@@ -1101,8 +1388,26 @@ function App() {
     startDay(day, overrides);
   };
   const ex=workout?workout.ex[ei]:null;
+  const recordTestOneRm = (exercise, weekNum) => {
+    const info = describeTestEstimate(exercise, cycles, weekNum);
+    if (!info) return;
+    setSaved1RMs(prev => prev[info.key] === info.value ? prev : { ...prev, [info.key]: info.value });
+    setOneRmFlags(prev => {
+      if (info.flagged) {
+        const entry = { proposed: info.proposed, kept: info.value, week: weekNum };
+        const had = prev[info.key];
+        if (had && had.proposed === entry.proposed && had.kept === entry.kept && had.week === entry.week) return prev;
+        return { ...prev, [info.key]: entry };
+      }
+      if (!prev[info.key]) return prev;
+      const next = { ...prev };
+      delete next[info.key];
+      return next;
+    });
+  };
   const updSet=(si,val)=>{
     const w={...workout}; const e=w.ex[ei];
+    if (e.test && si === 0 && !acceptAmrapInput(val)) return;
     e.sets[si]=val!==''?parseInt(val):null;
     // Progression only during normal weeks
     if (!wd.isDeload && !wd.isTest) {
@@ -1123,15 +1428,7 @@ function App() {
         else e.sugg = fails >= 3 ? 'down' : null;
       }
     }
-    // Auto-save 1RM for strength test
-    if (e.test && si === 0 && val !== '' && parseInt(val) > 0) {
-      const new1RM = calcRM(e.cw, parseInt(val));
-      if (new1RM) {
-        const key = e.rmKey || e.name;
-        const updated = { ...saved1RMs, [key]: new1RM };
-        setSaved1RMs(updated);
-      }
-    }
+    if (e.test && si === 0) recordTestOneRm(e, w.week);
     setWorkout(w);
     if(val!==''&&si<e.sets.length-1){
       const rest=e.prim?wd.rP:wd.rA;
@@ -1149,6 +1446,8 @@ function App() {
         const accKey = e.name + " " + e.reps;
         setAccWeights(prev=>({...prev,[accKey]:e.cw}));
         syncActiveCycleAccWeights({ [accKey]: e.cw }, w.week);
+      } else if (e.test) {
+        recordTestOneRm(e, w.week);
       }
     }
     setWorkout(w);
@@ -1164,22 +1463,20 @@ function App() {
     launchConfetti();
     setTimeout(async () => {
       const newHistory = [...history, workout];
-      setHistory(newHistory);
-      // Auto-generate next cycle when strength test is fully complete
-      if (cycles.length > 0) {
-        const curWd = allWeeks[workout.week];
-        if (curWd && curWd.isTest) {
-          const testDays = newHistory.filter(h=>h.week===workout.week && !h.missed).map(h=>h.day);
-          const uniqueDays = [...new Set(testDays)];
-          if (uniqueDays.length >= 5) {
-            const lastCycle = cycles[cycles.length - 1];
-            const nextStart = lastCycle.startWeek + 16;
-            if (!cycles.find(c=>c.startWeek===nextStart)) {
-              setCycles(prev=>[...prev, { startWeek:nextStart, oneRMs:{...saved1RMs}, accWeights:{...accWeights} }]);
-              setToast({ msg: `Next cycle ready! Weeks ${nextStart}-${nextStart+15}`, type: 'ok' });
-            }
-          }
-        }
+      const planned = planFromState(
+        { cycles, live: accWeights, history: newHistory, saved1RMs, currentWeek: week, flags: oneRmFlags },
+        { advanceUnloggedDeload: false }
+      );
+      setHistory(planned.history);
+      setSaved1RMs(planned.saved1RMs);
+      setOneRmFlags(planned.flags);
+      setAccWeights(planned.live);
+      setCycles(planned.cycles);
+      if (planned.created) {
+        const added = planned.cycles[planned.cycles.length - 1];
+        setToast({ msg: `Next cycle ready! Weeks ${added.startWeek}-${added.startWeek + 15}`, type: 'ok' });
+      } else if (planned.oneRmsUpdated && allWeeks[workout.week] && allWeeks[workout.week].isTest) {
+        setToast({ msg: 'Next cycle training maxes updated from this test.', type: 'ok' });
       }
       // Google Sheets sync
       if (sheetsUrl) {
@@ -1239,7 +1536,7 @@ function App() {
   // ── Full Backup Export/Import ──────────────────────────────────
   const exportBackup = () => {
     const backup = {};
-    const keys = ['wh','saved1RMs','bblsCycles','accWeights','currentWeek','sheetsUrl','userPin'];
+    const keys = ['wh','saved1RMs','bblsCycles','accWeights','currentWeek','sheetsUrl','userPin','bblsOneRmFlags'];
     keys.forEach(k => { const v = localStorage.getItem(k); if (v !== null) backup[k] = v; });
     backup._exportDate = new Date().toISOString();
     backup._version = 'bbls-backup-v1';
@@ -1263,7 +1560,7 @@ function App() {
             setToast({ msg: '\u2717 Invalid backup file', type: 'err' });
             return;
           }
-          const keys = ['wh','saved1RMs','bblsCycles','accWeights','currentWeek','sheetsUrl','userPin'];
+          const keys = ['wh','saved1RMs','bblsCycles','accWeights','currentWeek','sheetsUrl','userPin','bblsOneRmFlags'];
           keys.forEach(k => { if (data[k] !== undefined) localStorage.setItem(k, data[k]); });
           setToast({ msg: '\u2713 Backup restored! Reloading...', type: 'ok' });
           setTimeout(() => window.location.reload(), 1500);
@@ -1411,7 +1708,12 @@ function App() {
                   </div>
                   {showProg && e.sugg==='up'&&<div className="sugg up">{'\uD83D\uDCAA'} Next week: +10 lbs</div>}
                   {showProg && e.sugg==='down'&&<div className="sugg dn">{'\u26A0\uFE0F'} Next week: -10 lbs</div>}
-                  {e.test&&e.sets[0]!=null&&<div className="sugg up">{'\uD83C\uDFAF'} New 1RM est: {calcRM(e.cw,e.sets[0])} lbs</div>}
+                  {e.test&&e.sets[0]!=null&&(()=>{
+                    const info = describeTestEstimate(e, cycles, workout.week);
+                    if (!info) return null;
+                    if (info.flagged) return <div className="sugg dn">{'\u26A0\uFE0F'} Estimate {info.proposed} is over 15% above {info.value}. Next cycle keeps {info.value}.</div>;
+                    return <div className="sugg up">{'\uD83C\uDFAF'} New 1RM est: {info.value} lbs</div>;
+                  })()}
                 </div>
               );
             })}
@@ -1519,9 +1821,16 @@ function App() {
             <div className="card">
               <div className="ct">Current 1RMs</div>
               {Object.entries(saved1RMs).map(([name, rm]) => (
-                <div key={name} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--bdr)'}}>
-                  <span style={{fontSize:13}}>{name}</span>
-                  <span style={{color:'var(--red)',fontWeight:'bold',fontSize:13}}>{rm} lbs</span>
+                <div key={name} style={{padding:'6px 0',borderBottom:'1px solid var(--bdr)'}}>
+                  <div style={{display:'flex',justifyContent:'space-between'}}>
+                    <span style={{fontSize:13}}>{name}</span>
+                    <span style={{color:'var(--red)',fontWeight:'bold',fontSize:13}}>{rm} lbs</span>
+                  </div>
+                  {oneRmFlags[name] && (
+                    <div style={{fontSize:11,color:'var(--warn)',marginTop:2}}>
+                      Test estimate {oneRmFlags[name].proposed} was over 15% above {oneRmFlags[name].kept}. Kept {oneRmFlags[name].kept}.
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -1542,7 +1851,7 @@ function App() {
                     }} />
                 </div>
               ))}
-              <div style={{color:'var(--dim)',fontSize:11,marginTop:8,textAlign:'center'}}>Changes apply to this cycle and the next workout</div>
+              <div style={{color:'var(--dim)',fontSize:11,marginTop:8,textAlign:'center'}}>Changes apply to this cycle, future weeks, and the next workout</div>
             </div>
           )}
           {/* Settings card */}
@@ -1760,6 +2069,7 @@ function App() {
   const total=workout.ex.reduce((a,e)=>a+e.sets.filter(s=>s!==null).length,0);
   const poss=workout.ex.reduce((a,e)=>a+e.sets.length,0);
   
+  const testInfo = ex && ex.test ? describeTestEstimate(ex, cycles, workout.week) : null;
   const ticking = timerEndTime !== null;
   return(
     <div>
@@ -1786,7 +2096,10 @@ function App() {
             <div className="ex-name">{ex.name}</div>
             <div className={`chk${ex.done?' done':''}`} onClick={togDone}>{ex.done?'\u2713':''}</div>
           </div>
-          {ex.test&&ex.sets[0]!=null&&<div className="alrt ok">{'\uD83C\uDFAF'} Est. New 1RM: <strong>{calcRM(ex.cw,ex.sets[0])} lbs</strong> (Epley)<div style={{fontSize:11,marginTop:4,opacity:.8}}>{ex.sets[0]} reps @ {ex.cw} lbs</div></div>}
+          {ex.test&&ex.sets[0]!=null&&testInfo&&(testInfo.flagged
+            ? <div className="alrt warn">{'\u26A0\uFE0F'} Estimate {testInfo.proposed} is more than 15% above this cycle's training max ({testInfo.value}). The next cycle keeps {testInfo.value}.</div>
+            : <div className="alrt ok">{'\uD83C\uDFAF'} Est. New 1RM: <strong>{testInfo.value} lbs</strong> (Epley)<div style={{fontSize:11,marginTop:4,opacity:.8}}>{ex.sets[0]} reps @ {ex.cw} lbs</div></div>
+          )}
           {!ex.test&&!wd.isDeload&&!wd.isTest&&fails>=3&&ex.prim&&<div className="alrt ng">{'\u26A0\uFE0F'} Missed target 3+ sets &mdash; consider -10 lbs next week</div>}
           {!wd.isDeload&&!wd.isTest&&ex.sugg==='up'&&<div className="alrt ok">{'\uD83D\uDCAA'} All sets hit! Next week +10 lbs</div>}
           <div className="wbox">
@@ -1815,7 +2128,7 @@ function App() {
               <div className="sgrid" style={{gridTemplateColumns:'1fr'}}>
                 <div className={`sbox${ex.sets[0]!==null?(ex.sets[0]>=1?' hit':' miss'):''}`}>
                   <div className="sn">Set 1 &mdash; AMRAP</div>
-                  <input className="sinput" type="number" inputMode="numeric" value={ex.sets[0]??''} placeholder="–" onChange={e=>updSet(0,e.target.value)}/>
+                  <input className="sinput" type="number" inputMode="numeric" min="0" max={AMRAP_REP_MAX} value={ex.sets[0]??''} placeholder="–" onChange={e=>updSet(0,e.target.value)}/>
                 </div>
               </div>
               <div className="wbox" style={{marginTop:14}}>
